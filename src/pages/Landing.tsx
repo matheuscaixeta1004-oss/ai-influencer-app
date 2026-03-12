@@ -144,20 +144,17 @@ const footerLinks = {
 /* ─── Section components ─── */
 function SectionHeader({ label, title, subtitle }: { label?: string; title: string; subtitle?: string }) {
   return (
-    <div className="text-center mb-12">
+    <div className="text-center mb-14">
       {label && (
-        <p className="text-[12px] font-semibold tracking-[0.15em] uppercase text-primary mb-3" style={{ fontFamily: "'Geist', sans-serif" }}>
+        <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-primary mb-4">
           {label}
         </p>
       )}
-      <h2
-        className="text-[40px] font-semibold text-black leading-tight tracking-tight"
-        style={{ fontFamily: "'Geist', sans-serif" }}
-      >
+      <h2 className="text-[36px] font-medium text-black leading-snug" style={{ letterSpacing: '-0.03em' }}>
         {title}
       </h2>
       {subtitle && (
-        <p className="mt-3 text-[17px] text-gray-500 max-w-[560px] mx-auto leading-relaxed" style={{ fontFamily: "'Geist', sans-serif" }}>
+        <p className="mt-4 text-[16px] text-gray-400 max-w-[520px] mx-auto leading-relaxed">
           {subtitle}
         </p>
       )}
@@ -234,11 +231,11 @@ export function Landing() {
               </div>
             ))}
           </div>
-          {/* Diagonal gradient: solid white top-left → reveals mosaic bottom-right */}
+          {/* Diagonal gradient: solid white top-left → subtle reveal bottom-right */}
           <div
             className="absolute inset-0"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 25%, rgba(255,255,255,0.85) 45%, rgba(255,255,255,0.5) 65%, rgba(255,255,255,0.15) 85%, rgba(255,255,255,0) 100%)',
+              background: 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 35%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.85) 65%, rgba(255,255,255,0.7) 80%, rgba(255,255,255,0.55) 100%)',
             }}
           />
         </div>
@@ -296,18 +293,16 @@ export function Landing() {
             <SectionHeader label="How it works" title="From zero to content in 3 steps" subtitle="No training. No waiting. Start generating professional content in minutes." />
           </motion.div>
 
-          <div className="grid grid-cols-3 gap-8 mt-4">
+          <div className="grid grid-cols-3 gap-10 mt-4">
             {steps.map((step, i) => (
               <motion.div key={i} variants={sectionFade} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                <div className="relative p-8 rounded-2xl border border-gray-100 hover:border-gray-200 transition-colors">
-                  <span className="text-[48px] font-bold text-gray-100">{step.num}</span>
-                  <div className="mt-2">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
-                      <Icon d={step.icon} className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-[18px] font-semibold text-black mb-2">{step.title}</h3>
-                    <p className="text-[14px] text-gray-500 leading-relaxed">{step.desc}</p>
+                <div className="relative text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/8 flex items-center justify-center text-primary mx-auto mb-5">
+                    <Icon d={step.icon} className="w-5 h-5" />
                   </div>
+                  <span className="text-[11px] font-semibold tracking-widest uppercase text-gray-300 block mb-2">Step {step.num}</span>
+                  <h3 className="text-[17px] font-semibold text-black mb-2">{step.title}</h3>
+                  <p className="text-[14px] text-gray-400 leading-relaxed max-w-[280px] mx-auto">{step.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -322,15 +317,15 @@ export function Landing() {
             <SectionHeader label="Features" title="Everything you need to create" subtitle="A complete studio for building, generating, and managing your AI influencers." />
           </motion.div>
 
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-5">
             {features.map((f, i) => (
               <motion.div key={i} variants={sectionFade} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 hover:border-gray-200 transition-colors h-full">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
-                    <Icon d={f.icon} className="w-5 h-5" />
+                <div className="bg-white p-7 rounded-2xl border border-gray-100 hover:border-primary/20 transition-colors h-full">
+                  <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center text-primary mb-5">
+                    <Icon d={f.icon} className="w-[18px] h-[18px]" />
                   </div>
-                  <h3 className="text-[16px] font-semibold text-black mb-2">{f.title}</h3>
-                  <p className="text-[14px] text-gray-500 leading-relaxed">{f.desc}</p>
+                  <h3 className="text-[15px] font-semibold text-black mb-1.5">{f.title}</h3>
+                  <p className="text-[13px] text-gray-400 leading-relaxed">{f.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -349,13 +344,17 @@ export function Landing() {
             {showcaseModels.map((m, i) => (
               <motion.div key={i} variants={sectionFade} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
                 <div className="group relative rounded-2xl overflow-hidden cursor-pointer">
-                  <img src={m.img} alt={m.name} className="w-full h-[320px] object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div className="w-full h-[320px] bg-gradient-to-b from-gray-100 to-gray-200 flex items-center justify-center">
+                    <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <p className="text-white font-semibold text-[14px]">{m.name}, {m.age}</p>
+                    <p className="text-white font-medium text-[14px]">{m.name}, {m.age}</p>
                     <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-white/70 text-[12px]">{m.niche}</span>
-                      <span className="text-white/70 text-[12px]">{m.followers}</span>
+                      <span className="text-white/60 text-[12px]">{m.niche}</span>
+                      <span className="text-white/60 text-[12px]">{m.followers}</span>
                     </div>
                   </div>
                 </div>
@@ -377,8 +376,8 @@ export function Landing() {
               <motion.div key={i} variants={sectionFade} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 h-full flex flex-col">
                   <StarRating count={t.rating} />
-                  <p className="mt-4 text-[14px] text-gray-600 leading-relaxed flex-1">"{t.text}"</p>
-                  <p className="mt-4 text-[13px] font-semibold text-black">{t.name}</p>
+                  <p className="mt-4 text-[14px] text-gray-500 leading-relaxed flex-1">"{t.text}"</p>
+                  <p className="mt-4 text-[13px] font-medium text-black">{t.name}</p>
                 </div>
               </motion.div>
             ))}
@@ -470,7 +469,7 @@ export function Landing() {
       <section className="py-24">
         <div className="max-w-[700px] mx-auto px-6 text-center">
           <motion.div variants={sectionFade} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            <h2 className="text-[40px] font-semibold text-black tracking-tight">
+            <h2 className="text-[36px] font-medium text-black" style={{ letterSpacing: '-0.03em' }}>
               Ready to create your{' '}
               <span className="text-primary" style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic' }}>
                 AI influencer

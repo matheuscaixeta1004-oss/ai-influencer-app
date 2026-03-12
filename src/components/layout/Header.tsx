@@ -4,6 +4,7 @@ import { Input } from '../ui';
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Dashboard', subtitle: 'Visão geral do seu império' },
   '/models': { title: 'Modelos', subtitle: 'Gerencie suas AI influencers' },
+  '/models/create': { title: 'Nova Modelo', subtitle: 'Wizard de criação' },
   '/gallery': { title: 'Galeria', subtitle: 'Todas as fotos geradas' },
   '/generate': { title: 'Gerar Conteúdo', subtitle: 'Crie fotos e reels com IA' },
   '/credits': { title: 'Créditos', subtitle: 'Saldo e histórico de transações' },
@@ -26,11 +27,10 @@ export function Header() {
           <Input placeholder="Buscar..." icon={<span className="text-sm">🔍</span>} />
         </div>
 
-        {/* Credits badge */}
+        {/* Credits — gold coin */}
         <div className="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100">
-          <span className="text-sm">💰</span>
-          <span className="text-sm font-bold text-amber-700">1,315</span>
-          <span className="text-xs text-amber-500">credits</span>
+          <span className="text-base">🪙</span>
+          <span className="text-sm font-bold text-credit-gold">1,343</span>
         </div>
 
         {/* Notifications */}
@@ -40,6 +40,11 @@ export function Header() {
             3
           </span>
         </button>
+
+        {/* Avatar */}
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-xs font-bold cursor-pointer">
+          M
+        </div>
       </div>
     </header>
   );

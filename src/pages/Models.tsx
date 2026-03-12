@@ -1,5 +1,7 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Card, Badge, Button } from '../components/ui';
+import { Card, Badge, Button, Select } from '../components/ui';
 import { mockModels } from '../data/mock';
 import { CREDITS } from '../types';
 
@@ -19,16 +21,37 @@ const item = {
 };
 
 export function Models() {
+  const navigate = useNavigate();
+  const [filter, setFilter] = useState('all');
+
+  const filtered = filter === 'all'
+    ? mockModels
+    : mockModels.filter(m => m.status === filter);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-4">
           <p className="text-sm text-gray-500">
-            {mockModels.length}/{CREDITS.MAX_FREE_MODELS} modelos (plano gratuito)
+            {mockModels.length}/{CREDITS.MAX_FREE_MODELS} modelos
           </p>
+          <div className="w-40">
+            <Select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              options={[
+                { value: 'all', label: 'Todos' },
+                { value: 'active', label: 'Ativos' },
+                { value: 'draft', label: 'Rascunho' },
+                { value: 'training', label: 'Treinando' },
+              ]}
+            />
+          </div>
         </div>
-        <Button icon={<span>+</span>}>Nova Modelo</Button>
+        <Button icon={<span>+</span>} onClick={() => navigate('/models/create')}>
+          Nova Modelo
+        </Button>
       </div>
 
       {/* Grid */}
@@ -36,16 +59,16 @@ export function Models() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
       >
-        {mockModels.map((model) => (
+        {filtered.map((model) => (
           <motion.div key={model.id} variants={item}>
             <Card padding="none" hover>
               <div className="relative">
                 <img
                   src={model._avatar}
                   alt={model.name}
-                  className="w-full h-48 object-cover rounded-t-2xl"
+                  className="w-full h-52 object-cover rounded-t-2xl"
                 />
                 <div className="absolute top-3 right-3">
                   <Badge variant={statusMap[model.status].variant} dot>
@@ -56,12 +79,11 @@ export function Models() {
 
               <div className="p-4">
                 <h3 className="text-lg font-bold text-sidebar">{model.name}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{model.ethnicity} · {model.age} anos</p>
+                <p className="text-xs text-gray-500 mt-0.5">{model.ethnicity} · {model.age} anos · {model.location}</p>
                 <p className="text-xs text-gray-400 mt-1 line-clamp-2">{model.bio}</p>
 
                 <div className="flex items-center gap-2 mt-3">
                   <Badge variant="primary">{model.niche}</Badge>
-                  <Badge variant="default">{model.location}</Badge>
                 </div>
 
                 <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100">
@@ -80,6 +102,14 @@ export function Models() {
           </motion.div>
         ))}
       </motion.div>
+
+      {/* FAB */}
+      <button
+        onClick={() => navigate('/models/create')}
+        className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-primary text-white shadow-lg shadow-primary/30 flex items-center justify-center text-2xl hover:bg-primary-dark transition-colors cursor-pointer z-40"
+      >
+        +
+      </button>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, Button, Input, Badge } from '../components/ui';
 
@@ -20,6 +21,9 @@ const item = {
 };
 
 export function Settings() {
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState(true);
+
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="max-w-4xl space-y-6">
       {/* Profile */}
@@ -30,10 +34,49 @@ export function Settings() {
             <Input label="Nome" defaultValue="Matheus" />
             <Input label="Email" defaultValue="matheus@waao.com.br" type="email" />
             <Input label="Plano" defaultValue="Pro" disabled />
-            <Input label="API Key" defaultValue="sk-••••••••••••••••" type="password" />
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Dev Mode</label>
+              <div className="flex items-center gap-3 py-2">
+                <Badge variant="primary" dot>is_dev = true</Badge>
+                <Badge variant="info">♾️ Créditos infinitos</Badge>
+              </div>
+            </div>
           </div>
           <div className="flex justify-end mt-5">
             <Button>Salvar Alterações</Button>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Preferences */}
+      <motion.div variants={item}>
+        <Card>
+          <CardHeader title="Preferências" />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-3 border-b border-gray-50">
+              <div>
+                <p className="text-sm font-semibold text-sidebar">Dark Mode</p>
+                <p className="text-xs text-gray-500">Ativar tema escuro</p>
+              </div>
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className={`w-12 h-6 rounded-full transition-colors cursor-pointer relative ${darkMode ? 'bg-primary' : 'bg-gray-300'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <p className="text-sm font-semibold text-sidebar">Notificações</p>
+                <p className="text-xs text-gray-500">Receber alertas de geração</p>
+              </div>
+              <button
+                onClick={() => setNotifications(!notifications)}
+                className={`w-12 h-6 rounded-full transition-colors cursor-pointer relative ${notifications ? 'bg-primary' : 'bg-gray-300'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform ${notifications ? 'translate-x-6' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
           </div>
         </Card>
       </motion.div>
@@ -44,7 +87,7 @@ export function Settings() {
           <CardHeader title="Integrações" subtitle="Serviços conectados" />
           <div className="space-y-3">
             {integrations.map((int) => (
-              <div key={int.name} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+              <div key={int.name} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{int.icon}</span>
                   <div>
@@ -68,12 +111,21 @@ export function Settings() {
       <motion.div variants={item}>
         <Card className="border-red-100">
           <CardHeader title="Zona de Perigo" subtitle="Ações irreversíveis" />
-          <div className="flex items-center justify-between p-3 rounded-lg bg-red-50">
-            <div>
-              <p className="text-sm font-semibold text-red-700">Resetar todos os dados</p>
-              <p className="text-xs text-red-500">Remove modelos, fotos e configurações</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-red-50">
+              <div>
+                <p className="text-sm font-semibold text-red-700">Resetar todos os dados</p>
+                <p className="text-xs text-red-500">Remove modelos, fotos e configurações</p>
+              </div>
+              <Button variant="danger" size="sm">Resetar</Button>
             </div>
-            <Button variant="danger" size="sm">Resetar</Button>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-red-50">
+              <div>
+                <p className="text-sm font-semibold text-red-700">Excluir conta</p>
+                <p className="text-xs text-red-500">Remove permanentemente todos os dados</p>
+              </div>
+              <Button variant="danger" size="sm">Excluir</Button>
+            </div>
           </div>
         </Card>
       </motion.div>

@@ -13,25 +13,7 @@ const starIcons = Array(5).fill(null);
 
 export function Landing() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-white">
-      {/* Background Video */}
-      <div className="absolute inset-0 z-0">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="w-full h-full object-cover [transform:scaleY(-1)]"
-        >
-          <source
-            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260302_085640_276ea93b-d7da-4418-a09b-2aa5b490e838.mp4"
-            type="video/mp4"
-          />
-        </video>
-        {/* White gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[26.416%] from-[rgba(255,255,255,0)] to-[66.943%] to-white" />
-      </div>
-
+    <section className="relative min-h-screen bg-white">
       {/* Content */}
       <motion.div
         variants={container}
@@ -46,14 +28,14 @@ export function Landing() {
           style={{ fontFamily: "'Geist', sans-serif", fontWeight: 500, letterSpacing: '-0.04em' }}
         >
           <span className="text-[80px] leading-[1.05] text-black">
-            Simple{' '}
+            Create your{' '}
             <span
               style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', fontWeight: 400, fontSize: '100px' }}
             >
-              management
+              AI influencer
             </span>
             <br />
-            for your remote team
+            in minutes
           </span>
         </motion.h1>
 
@@ -63,7 +45,7 @@ export function Landing() {
           className="text-center text-[18px] leading-[1.6] max-w-[554px]"
           style={{ fontFamily: "'Geist', sans-serif", color: 'rgba(55, 58, 70, 0.8)' }}
         >
-          Streamline your workflow, track progress, and keep your distributed team aligned — all in one beautifully simple platform.
+          Generate consistent AI models, create stunning content, and manage your virtual influencer empire — all from one platform.
         </motion.p>
 
         {/* Email Input + CTA */}

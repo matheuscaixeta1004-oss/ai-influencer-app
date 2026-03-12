@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastProvider } from './components/ui';
 import { Layout } from './components/layout';
-import { Auth, Dashboard, Models, Gallery, Generate, Credits, Settings, CreateModelWizard } from './pages';
+import { Auth, Landing, Dashboard, Models, Gallery, Generate, Credits, Settings, CreateModelWizard } from './pages';
 
 export default function App() {
   return (
@@ -9,6 +9,7 @@ export default function App() {
       <ToastProvider>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/landing" element={<Landing />} />
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/models" element={<Models />} />

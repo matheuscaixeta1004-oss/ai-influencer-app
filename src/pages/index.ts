@@ -1,4 +1,5 @@
 export { Auth } from './Auth';
+export { Landing } from './Landing';
 export { Dashboard } from './Dashboard';
 export { Models } from './Models';
 export { Gallery } from './Gallery';

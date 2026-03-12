@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, Button, Select, Badge } from '../components/ui';
 import { mockModels } from '../data/mock';
+import { CREDITS } from '../types';
 
 const styleOptions = [
   { value: 'golden-hour', label: '🌅 Golden Hour' },
@@ -12,17 +13,19 @@ const styleOptions = [
   { value: 'glamour', label: '✨ Glamour' },
 ];
 
-const typeOptions = [
-  { value: 'photo', label: '📸 Foto' },
-  { value: 'reel', label: '🎬 Reel' },
+const qualityOptions = [
+  { value: 'standard', label: `Standard (${CREDITS.GENERATE_STANDARD} créditos)` },
+  { value: 'hd', label: `HD (${CREDITS.GENERATE_HD} créditos)` },
 ];
 
 export function Generate() {
   const [selectedModel, setSelectedModel] = useState('');
-  const [contentType, setContentType] = useState('photo');
+  const [quality, setQuality] = useState('standard');
   const [style, setStyle] = useState('');
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const creditCost = quality === 'hd' ? CREDITS.GENERATE_HD : CREDITS.GENERATE_STANDARD;
 
   const handleGenerate = () => {
     setIsGenerating(true);
@@ -39,7 +42,7 @@ export function Generate() {
         {/* Form */}
         <div className="lg:col-span-3 space-y-5">
           <Card>
-            <CardHeader title="Gerar Conteúdo" subtitle="Configure e gere fotos ou reels com IA" />
+            <CardHeader title="Gerar Conteúdo" subtitle="Crie imagens com IA para suas modelos" />
 
             <div className="space-y-4">
               <Select
@@ -47,15 +50,15 @@ export function Generate() {
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
                 placeholder="Selecione uma modelo"
-                options={mockModels.map((m) => ({ value: m.id, label: m.name }))}
+                options={mockModels.filter(m => m.status === 'active').map((m) => ({ value: m.id, label: m.name }))}
               />
 
               <div className="grid grid-cols-2 gap-4">
                 <Select
-                  label="Tipo"
-                  value={contentType}
-                  onChange={(e) => setContentType(e.target.value)}
-                  options={typeOptions}
+                  label="Qualidade"
+                  value={quality}
+                  onChange={(e) => setQuality(e.target.value)}
+                  options={qualityOptions}
                 />
                 <Select
                   label="Estilo"
@@ -80,7 +83,7 @@ export function Generate() {
               <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center gap-2">
                   <Badge variant="warning">
-                    {contentType === 'photo' ? '10 créditos' : '25 créditos'}
+                    {creditCost} créditos
                   </Badge>
                   <span className="text-xs text-gray-400">por geração</span>
                 </div>
@@ -96,11 +99,11 @@ export function Generate() {
           </Card>
         </div>
 
-        {/* Preview / Tips */}
+        {/* Preview */}
         <div className="lg:col-span-2 space-y-5">
           <Card>
             <CardHeader title="Preview" />
-            <div className="aspect-[3/4] bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
+            <div className="aspect-[3/4] bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center">
               {isGenerating ? (
                 <div className="text-center">
                   <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-3" />
@@ -116,25 +119,25 @@ export function Generate() {
           </Card>
 
           <Card>
-            <CardHeader title="Dicas" />
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">•</span>
-                <span>Seja específico no prompt — pose, ambiente, iluminação</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">•</span>
-                <span>Use refs de consistência para manter a identidade da modelo</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">•</span>
-                <span>Reels consomem 25 créditos; fotos consomem 10</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">•</span>
-                <span>Golden Hour e Editorial têm os melhores resultados</span>
-              </li>
-            </ul>
+            <CardHeader title="Custos" />
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between py-2 border-b border-gray-50">
+                <span className="text-gray-500">Standard</span>
+                <span className="font-semibold">{CREDITS.GENERATE_STANDARD} créditos</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-50">
+                <span className="text-gray-500">HD</span>
+                <span className="font-semibold">{CREDITS.GENERATE_HD} créditos</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-50">
+                <span className="text-gray-500">Criar modelo</span>
+                <span className="font-semibold">{CREDITS.CREATE_MODEL} créditos</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-gray-500">Upload fotos</span>
+                <span className="font-semibold text-emerald-600">Grátis</span>
+              </div>
+            </div>
           </Card>
         </div>
       </div>

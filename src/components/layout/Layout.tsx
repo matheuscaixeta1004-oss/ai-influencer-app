@@ -8,7 +8,7 @@ export function Layout() {
       <Sidebar />
       <div className="ml-60">
         <Header />
-        <main className="p-6">
+        <main className="p-8 max-w-[1280px]">
           <Outlet />
         </main>
       </div>

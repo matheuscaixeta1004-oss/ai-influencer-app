@@ -31,7 +31,7 @@ export function Credits() {
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-300">Usado Hoje</p>
-              <p className="text-2xl font-bold text-amber-400">{mockStats.creditsUsedToday}</p>
+              <p className="text-2xl font-bold text-credit-gold">{mockStats.creditsUsedToday}</p>
               <p className="text-xs text-gray-400 mt-1">créditos</p>
             </div>
           </div>
@@ -71,10 +71,10 @@ export function Credits() {
         </div>
       </motion.div>
 
-      {/* Transaction History */}
+      {/* Transactions */}
       <motion.div variants={item}>
         <Card>
-          <CardHeader title="Histórico de Transações" subtitle="Todas as movimentações de crédito" />
+          <CardHeader title="Histórico" subtitle="Todas as movimentações" />
           <div className="space-y-1">
             <div className="grid grid-cols-4 text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-2">
               <span>Tipo</span>
@@ -86,16 +86,16 @@ export function Credits() {
               <div key={t.id} className="grid grid-cols-4 items-center px-3 py-3 rounded-lg hover:bg-gray-50 transition-colors text-sm">
                 <div>
                   <Badge
-                    variant={t.type === 'purchase' ? 'success' : t.type === 'bonus' ? 'info' : 'default'}
+                    variant={t.amount > 0 ? 'success' : 'default'}
                   >
-                    {t.type === 'purchase' ? 'Compra' : t.type === 'bonus' ? 'Bônus' : 'Uso'}
+                    {t.amount > 0 ? 'Entrada' : 'Uso'}
                   </Badge>
                 </div>
-                <span className="text-gray-700 truncate">{t.description}</span>
+                <span className="text-gray-700 truncate">{t.reason}</span>
                 <span className={`text-right font-semibold ${t.amount > 0 ? 'text-emerald-600' : 'text-gray-600'}`}>
                   {t.amount > 0 ? '+' : ''}{t.amount}
                 </span>
-                <span className="text-right text-gray-500">{t.balanceAfter.toLocaleString()}</span>
+                <span className="text-right text-gray-500">{t._balanceAfter.toLocaleString()}</span>
               </div>
             ))}
           </div>

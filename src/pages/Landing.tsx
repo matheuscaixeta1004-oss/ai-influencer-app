@@ -16,37 +16,37 @@ const sectionFade = {
   show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-/* ─── Mosaic Photos ─── */
+/* ─── Mosaic Photos (AI-generated via Nano Banana Pro) ─── */
 const mosaicCols = [
   [
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop',
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=450&fit=crop',
-    'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=550&fit=crop',
+    '/images/mosaic/1.jpg',   // Mirror selfie, walk-in closet
+    '/images/mosaic/2.jpg',   // Restaurant candlelit dinner
+    '/images/mosaic/3.jpg',   // Morning in bed
+    '/images/mosaic/4.jpg',   // Beach sunbathing
   ],
   [
-    'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=550&fit=crop',
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=450&fit=crop',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=500&fit=crop',
+    '/images/mosaic/5.jpg',   // Gym mirror selfie
+    '/images/mosaic/6.jpg',   // Fitting room
+    '/images/mosaic/7.jpg',   // Rooftop bar nightlife
+    '/images/mosaic/8.jpg',   // Car selfie
   ],
   [
-    'https://images.unsplash.com/photo-1515023115894-bacee399a264?w=400&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&h=450&fit=crop',
-    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=550&fit=crop',
-    'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop',
+    '/images/mosaic/9.jpg',   // Shopping city walk
+    '/images/mosaic/10.jpg',  // Getting ready makeup
+    '/images/mosaic/11.jpg',  // Bubble bath champagne
+    '/images/mosaic/12.jpg',  // Festival selfie
   ],
   [
-    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=450&fit=crop',
-    'https://images.unsplash.com/photo-1521146764736-56c929d59c83?w=400&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1496440737103-cd596325d314?w=400&h=500&fit=crop',
-    'https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=550&fit=crop',
+    '/images/mosaic/13.jpg',  // Cooking morning
+    '/images/mosaic/14.jpg',  // Cafe laptop
+    '/images/mosaic/15.jpg',  // Pool villa tropical
+    '/images/mosaic/16.jpg',  // Brunch with friends
   ],
   [
-    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop',
-    'https://images.unsplash.com/photo-1464863979621-258859e62245?w=400&h=600&fit=crop',
-    'https://images.unsplash.com/photo-1504703395950-b89145a5425b?w=400&h=450&fit=crop',
-    'https://images.unsplash.com/photo-1492106087820-71f1a00d2b11?w=400&h=550&fit=crop',
+    '/images/mosaic/17.jpg',  // Getting out of car NYC night
+    '/images/mosaic/18.jpg',  // Morning stretch skyline
+    '/images/mosaic/19.jpg',  // Beach sunset arms open
+    '/images/mosaic/20.jpg',  // Couch takeout fairy lights
   ],
 ];
 

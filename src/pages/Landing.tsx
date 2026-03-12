@@ -106,6 +106,7 @@ export function Landing() {
           <span className="text-[80px] leading-[1.05] text-black">
             Create your{' '}
             <span
+              className="text-primary"
               style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', fontWeight: 400, fontSize: '100px' }}
             >
               AI influencer
@@ -138,11 +139,11 @@ export function Landing() {
             />
             <button
               onClick={() => navigate('/auth')}
-              className="flex-shrink-0 rounded-[32px] px-7 py-3.5 text-[14px] font-medium text-white cursor-pointer transition-transform duration-150 active:scale-[0.97]"
+              className="flex-shrink-0 rounded-[32px] px-7 py-3.5 text-[14px] font-medium text-white cursor-pointer transition-all duration-150 active:scale-[0.97] hover:brightness-110"
               style={{
                 fontFamily: "'Geist', sans-serif",
-                background: 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 50%, #111111 100%)',
-                boxShadow: 'inset -4px -6px 25px 0px rgba(201,201,201,0.08), inset 4px 4px 10px 0px rgba(29,29,29,0.24)',
+                background: 'linear-gradient(180deg, #00BFF5 0%, #00AFF0 50%, #0099D4 100%)',
+                boxShadow: 'inset -4px -6px 25px 0px rgba(255,255,255,0.12), inset 4px 4px 10px 0px rgba(0,0,0,0.15)',
               }}
             >
               Create Free Account

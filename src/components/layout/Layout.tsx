@@ -4,11 +4,11 @@ import { Header } from './Header';
 
 export function Layout() {
   return (
-    <div className="min-h-screen bg-[#F5F5F5]">
+    <div className="min-h-screen bg-white">
       <Sidebar />
       <div className="ml-60">
         <Header />
-        <main className="p-8 max-w-[1280px]">
+        <main className="px-8 py-6 max-w-[1280px]">
           <Outlet />
         </main>
       </div>

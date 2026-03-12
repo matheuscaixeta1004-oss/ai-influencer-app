@@ -13,30 +13,23 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-60 bg-sidebar flex flex-col z-30">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <span className="text-white font-semibold text-sm">AI Influencer</span>
-        </div>
+      <div className="px-5 h-14 flex items-center border-b border-white/5">
+        <span className="text-white font-semibold text-[15px] tracking-tight">AI Influencer</span>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <nav className="flex-1 px-3 py-3 space-y-px">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to === '/'}
             className={({ isActive }) => `
-              flex items-center gap-3 px-3 py-2 rounded-lg text-sm
-              transition-colors duration-150
+              flex items-center gap-3 px-3 py-2 rounded-lg text-[13px]
+              transition-colors duration-100
               ${isActive
-                ? 'bg-sidebar-active text-white border-l-[3px] border-primary'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5 border-l-[3px] border-transparent'
+                ? 'text-primary bg-sidebar-active'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]'
               }
             `}
           >
@@ -48,15 +41,14 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="px-4 py-4 border-t border-white/10">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-medium">
+      {/* User */}
+      <div className="px-4 py-3 border-t border-white/5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-gray-600 flex items-center justify-center text-white text-[11px] font-medium">
             M
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-medium truncate">Matheus</p>
-            <p className="text-gray-500 text-[10px]">Pro Plan</p>
+          <div>
+            <p className="text-white text-[13px] font-medium">Matheus</p>
           </div>
         </div>
       </div>

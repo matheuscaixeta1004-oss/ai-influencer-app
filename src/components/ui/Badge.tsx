@@ -10,12 +10,12 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'bg-gray-100 text-text-secondary',
-  success: 'bg-emerald-50 text-emerald-700',
-  warning: 'bg-amber-50 text-amber-700',
-  danger: 'bg-red-50 text-red-700',
-  info: 'bg-blue-50 text-blue-700',
-  primary: 'bg-primary-light text-primary-dark',
+  default: 'bg-gray-100 text-gray-600',
+  success: 'bg-emerald-50 text-emerald-600',
+  warning: 'bg-amber-50 text-amber-600',
+  danger: 'bg-red-50 text-red-600',
+  info: 'bg-blue-50 text-blue-600',
+  primary: 'bg-primary/10 text-primary-dark',
 };
 
 const dotColors: Record<BadgeVariant, string> = {
@@ -31,7 +31,7 @@ export function Badge({ variant = 'default', children, dot = false, className = 
   return (
     <span
       className={`
-        inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium
+        inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium
         ${variantStyles[variant]}
         ${className}
       `}

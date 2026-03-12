@@ -11,7 +11,15 @@ const navItems = [
 
 export function Sidebar() {
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-60 bg-sidebar flex flex-col z-30">
+    <aside
+      className="fixed left-0 top-0 bottom-0 w-60 flex flex-col z-30"
+      style={{
+        background: 'rgba(26, 26, 46, 0.75)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+      }}
+    >
       {/* Logo */}
       <div className="px-5 h-14 flex items-center border-b border-white/5">
         <span className="text-white font-semibold text-[15px] tracking-tight">AI Influencer</span>

@@ -10,7 +10,7 @@ interface CardProps {
 
 const paddingStyles = {
   none: '',
-  sm: 'p-3',
+  sm: 'p-4',
   md: 'p-5',
   lg: 'p-6',
 };
@@ -19,9 +19,9 @@ export function Card({ children, className = '', padding = 'md', hover = false, 
   return (
     <div
       className={`
-        bg-white rounded-2xl border border-gray-100 shadow-sm
+        bg-white rounded-card shadow-card
         ${paddingStyles[padding]}
-        ${hover ? 'hover:shadow-md hover:border-gray-200 transition-all duration-200 cursor-pointer' : ''}
+        ${hover ? 'hover:shadow-md transition-shadow duration-200 cursor-pointer' : ''}
         ${className}
       `}
       onClick={onClick}
@@ -41,8 +41,8 @@ export function CardHeader({ title, subtitle, action }: CardHeaderProps) {
   return (
     <div className="flex items-center justify-between mb-4">
       <div>
-        <h3 className="text-lg font-bold text-sidebar">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+        <h3 className="text-base font-semibold text-text-primary">{title}</h3>
+        {subtitle && <p className="text-sm text-text-secondary mt-0.5">{subtitle}</p>}
       </div>
       {action && <div>{action}</div>}
     </div>

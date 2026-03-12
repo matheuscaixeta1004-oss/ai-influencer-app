@@ -189,23 +189,34 @@ export function Landing() {
 
   return (
     <div className="bg-white" style={{ fontFamily: "'Geist', sans-serif" }}>
-      {/* ── Nav ── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="text-[18px] font-bold text-black tracking-tight">AI Influencer</span>
-          <div className="flex items-center gap-8">
-            {['Features', 'Pricing', 'FAQ'].map((l) => (
-              <a key={l} href={`#${l.toLowerCase()}`} className="text-[14px] text-gray-500 hover:text-black transition-colors">
-                {l}
-              </a>
-            ))}
-            <button
-              onClick={() => navigate('/auth')}
-              className="px-5 py-2 text-[13px] font-medium text-white bg-primary hover:bg-primary-dark rounded-full transition-colors cursor-pointer"
+      {/* ── Nav — Liquid Glass ── */}
+      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-auto">
+        <div
+          className="flex items-center gap-1 px-2 py-1.5 rounded-full"
+          style={{
+            background: 'rgba(255, 255, 255, 0.55)',
+            backdropFilter: 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+            border: '1px solid rgba(255, 255, 255, 0.45)',
+            boxShadow: '0 4px 30px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+          }}
+        >
+          <span className="text-[15px] font-semibold text-black/80 tracking-tight pl-4 pr-6">AI Influencer</span>
+          {['Features', 'Pricing', 'FAQ'].map((l) => (
+            <a
+              key={l}
+              href={`#${l.toLowerCase()}`}
+              className="px-4 py-2 text-[13px] font-medium text-black/50 hover:text-black/80 hover:bg-white/40 rounded-full transition-all duration-200"
             >
-              Get Started
-            </button>
-          </div>
+              {l}
+            </a>
+          ))}
+          <button
+            onClick={() => navigate('/auth')}
+            className="ml-1 px-5 py-2 text-[13px] font-medium text-white bg-primary hover:bg-primary-dark rounded-full transition-colors cursor-pointer"
+          >
+            Get Started
+          </button>
         </div>
       </nav>
 

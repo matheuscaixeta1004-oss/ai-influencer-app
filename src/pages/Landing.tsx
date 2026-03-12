@@ -107,10 +107,10 @@ const featureBlocks = [
 ];
 
 const showcaseModels = [
-  { name: 'Sophia', niche: 'Fitness & Wellness', followers: '124K', posts: '2.4K', earnings: '$8.2K/mo' },
-  { name: 'Luna', niche: 'Lifestyle & Travel', followers: '89K', posts: '1.8K', earnings: '$5.1K/mo' },
-  { name: 'Mia', niche: 'Fashion & Luxury', followers: '210K', posts: '3.2K', earnings: '$15.4K/mo' },
-  { name: 'Ava', niche: 'Cosplay & Gaming', followers: '156K', posts: '2.1K', earnings: '$11.7K/mo' },
+  { name: 'Sophia', niche: 'Fitness & Wellness', followers: '124K', posts: '2.4K', earnings: '$8.2K/mo', photo: '/images/showcase/sophia.jpg' },
+  { name: 'Luna', niche: 'Lifestyle & Travel', followers: '89K', posts: '1.8K', earnings: '$5.1K/mo', photo: '/images/showcase/luna.jpg' },
+  { name: 'Mia', niche: 'Fashion & Luxury', followers: '210K', posts: '3.2K', earnings: '$15.4K/mo', photo: '/images/showcase/mia.jpg' },
+  { name: 'Ava', niche: 'Cosplay & Gaming', followers: '156K', posts: '2.1K', earnings: '$11.7K/mo', photo: '/images/showcase/ava.jpg' },
 ];
 
 const testimonials = [
@@ -472,11 +472,9 @@ export function Landing() {
             {showcaseModels.map((m, i) => (
               <motion.div key={i} variants={sectionFade} initial="hidden" whileInView="show" viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
                 <div className="rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 transition-colors">
-                  {/* Photo placeholder */}
-                  <div className="w-full h-[260px] bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
-                    <svg className="w-12 h-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={0.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+                  {/* Model photo */}
+                  <div className="w-full h-[260px] overflow-hidden">
+                    <img src={m.photo} alt={m.name} className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-500" loading="lazy" />
                   </div>
                   {/* Info */}
                   <div className="p-5">

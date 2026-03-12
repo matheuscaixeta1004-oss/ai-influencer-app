@@ -3,14 +3,13 @@ import { useNavigate } from 'react-router-dom';
 
 const container = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.15 } },
+  show: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.3 } },
 };
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.4, 0.25, 1] as const } },
 };
 
-// Placeholder photos — varied AI model shots
 const photos = {
   col1: [
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop',
@@ -36,138 +35,146 @@ const photos = {
     'https://images.unsplash.com/photo-1496440737103-cd596325d314?w=400&h=500&fit=crop',
     'https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=550&fit=crop',
   ],
+  col5: [
+    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1464863979621-258859e62245?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1504703395950-b89145a5425b?w=400&h=450&fit=crop',
+    'https://images.unsplash.com/photo-1492106087820-71f1a00d2b11?w=400&h=550&fit=crop',
+  ],
 };
 
-const features = [
-  'Hyper-realistic — fans can\'t tell',
-  'No training. No waiting. Instant.',
-  'A month of content in an afternoon',
-];
+const starIcons = Array(5).fill(null);
 
 export function Landing() {
   const navigate = useNavigate();
 
   return (
     <section className="relative min-h-screen bg-white overflow-hidden">
-      <div className="flex min-h-screen">
-        {/* Left — Content */}
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="relative z-10 flex flex-col justify-center w-[52%] pl-16 pr-12 py-20"
-        >
-          {/* Heading */}
-          <motion.h1 variants={fadeUp}>
-            <span
-              className="block text-[64px] leading-[1.05] font-bold tracking-tight"
-              style={{ fontFamily: "'Geist', sans-serif" }}
+      {/* Background — Photo Mosaic */}
+      <div className="absolute inset-0 z-0">
+        <div className="flex gap-3 h-full px-4">
+          {Object.values(photos).map((col, colIdx) => (
+            <div
+              key={colIdx}
+              className="flex-1 flex flex-col gap-3"
+              style={{
+                animation: `mosaicScroll ${20 + colIdx * 4}s linear infinite`,
+                animationDirection: colIdx % 2 === 0 ? 'normal' : 'reverse',
+              }}
             >
-              <span className="text-primary">The #1 AI Studio</span>
-              <br />
-              <span className="text-black">Built Just For</span>
-              <br />
-              <span className="text-primary">
-                <span
-                  style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', fontWeight: 400, fontSize: '72px' }}
-                >
-                  Creators
-                </span>
-              </span>
+              {[...col, ...col].map((src, i) => (
+                <div key={i} className="flex-shrink-0">
+                  <img
+                    src={src}
+                    alt=""
+                    className="w-full rounded-2xl object-cover"
+                    style={{ height: `${300 + (i % 3) * 60}px` }}
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* White overlay — heavy center fade for text readability */}
+        <div className="absolute inset-0 bg-white/80" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse 70% 60% at 50% 45%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.3) 100%)',
+          }}
+        />
+        {/* Edge fades */}
+        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-white to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white to-transparent" />
+      </div>
+
+      {/* Content — Centered */}
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="relative z-10 mx-auto max-w-[1200px] px-6 pt-[240px] pb-20 flex flex-col items-center gap-8"
+      >
+        {/* Heading */}
+        <motion.h1
+          variants={fadeUp}
+          className="text-center"
+          style={{ fontFamily: "'Geist', sans-serif", fontWeight: 500, letterSpacing: '-0.04em' }}
+        >
+          <span className="text-[80px] leading-[1.05] text-black">
+            Create your{' '}
+            <span
+              style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', fontWeight: 400, fontSize: '100px' }}
+            >
+              AI influencer
             </span>
-          </motion.h1>
+            <br />
+            in minutes
+          </span>
+        </motion.h1>
 
-          {/* Description */}
-          <motion.p
-            variants={fadeUp}
-            className="mt-6 text-[17px] leading-[1.7] max-w-[480px]"
-            style={{ fontFamily: "'Geist', sans-serif", color: '#555' }}
+        {/* Description */}
+        <motion.p
+          variants={fadeUp}
+          className="text-center text-[18px] leading-[1.6] max-w-[554px]"
+          style={{ fontFamily: "'Geist', sans-serif", color: 'rgba(55, 58, 70, 0.8)' }}
+        >
+          Generate hyper-realistic AI models, create stunning content, and build your virtual influencer empire — all from one platform.
+        </motion.p>
+
+        {/* Email Input + CTA */}
+        <motion.div variants={fadeUp} className="w-full max-w-[520px]">
+          <div
+            className="flex items-center gap-2 rounded-[40px] bg-white/90 backdrop-blur-sm border border-gray-200 px-2 py-2"
+            style={{ boxShadow: '0px 10px 40px 5px rgba(194,194,194,0.25)' }}
           >
-            Upload 3 photos. Generate unlimited, hyper-realistic content.
-            Turn your likeness into an infinite content engine.
-          </motion.p>
-
-          {/* CTA */}
-          <motion.div variants={fadeUp} className="mt-8">
+            <input
+              type="email"
+              placeholder="Enter your email address"
+              className="flex-1 bg-transparent px-5 py-3 text-[15px] text-black placeholder:text-gray-400 focus:outline-none"
+              style={{ fontFamily: "'Geist', sans-serif" }}
+            />
             <button
               onClick={() => navigate('/auth')}
-              className="px-12 py-4 text-[15px] font-semibold tracking-wider uppercase text-white rounded-full cursor-pointer transition-transform duration-150 active:scale-[0.97]"
+              className="flex-shrink-0 rounded-[32px] px-7 py-3.5 text-[14px] font-medium text-white cursor-pointer transition-transform duration-150 active:scale-[0.97]"
               style={{
                 fontFamily: "'Geist', sans-serif",
                 background: 'linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 50%, #111111 100%)',
                 boxShadow: 'inset -4px -6px 25px 0px rgba(201,201,201,0.08), inset 4px 4px 10px 0px rgba(29,29,29,0.24)',
               }}
             >
-              Get Started
+              Create Free Account
             </button>
-          </motion.div>
+          </div>
 
-          {/* Features card */}
-          <motion.div
-            variants={fadeUp}
-            className="mt-10 max-w-[380px] bg-white border border-gray-200 rounded-2xl p-6"
-            style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}
-          >
-            <p
-              className="text-[11px] font-semibold tracking-widest uppercase text-gray-500 mb-4"
-              style={{ fontFamily: "'Geist', sans-serif" }}
-            >
-              The AI Content Studio for Creators
-            </p>
-            <div className="space-y-3">
-              {features.map((f, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <svg className="w-5 h-5 flex-shrink-0 text-primary" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-[14px] text-black" style={{ fontFamily: "'Geist', sans-serif" }}>
-                    {f}
-                  </span>
+          {/* Social Proof */}
+          <div className="flex items-center justify-center gap-3 mt-5">
+            <div className="flex items-center gap-0.5">
+              {starIcons.map((_, i) => (
+                <svg key={i} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+            </div>
+            <span className="text-[14px] font-medium text-gray-600" style={{ fontFamily: "'Geist', sans-serif" }}>
+              1,020+ Reviews
+            </span>
+            <div className="flex items-center -space-x-1.5 ml-1">
+              {['G', 'T', 'P', 'C'].map((letter, i) => (
+                <div
+                  key={i}
+                  className="w-6 h-6 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-[9px] font-bold text-gray-500"
+                >
+                  {letter}
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
         </motion.div>
+      </motion.div>
 
-        {/* Right — Photo Mosaic */}
-        <div className="relative w-[48%] overflow-hidden">
-          {/* Fade overlays */}
-          <div className="absolute inset-0 z-10 pointer-events-none">
-            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
-            <div className="absolute top-0 left-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent" />
-          </div>
-
-          {/* Scrolling columns */}
-          <div className="flex gap-3 h-full pt-4">
-            {Object.values(photos).map((col, colIdx) => (
-              <div
-                key={colIdx}
-                className="flex-1 flex flex-col gap-3"
-                style={{
-                  animation: `mosaicScroll ${18 + colIdx * 3}s linear infinite`,
-                  animationDirection: colIdx % 2 === 0 ? 'normal' : 'reverse',
-                }}
-              >
-                {/* Duplicate for seamless loop */}
-                {[...col, ...col].map((src, i) => (
-                  <div key={i} className="flex-shrink-0">
-                    <img
-                      src={src}
-                      alt=""
-                      className="w-full rounded-xl object-cover"
-                      style={{ height: `${280 + (i % 3) * 60}px` }}
-                      loading="lazy"
-                    />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Mosaic scroll animation */}
       <style>{`
         @keyframes mosaicScroll {
           0% { transform: translateY(0); }

@@ -234,10 +234,13 @@ export function Landing() {
               </div>
             ))}
           </div>
-          <div className="absolute inset-0 bg-white/80" />
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 45%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.3) 100%)' }} />
-          <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-white to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white to-transparent" />
+          {/* Diagonal gradient: solid white top-left → reveals mosaic bottom-right */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 25%, rgba(255,255,255,0.85) 45%, rgba(255,255,255,0.5) 65%, rgba(255,255,255,0.15) 85%, rgba(255,255,255,0) 100%)',
+            }}
+          />
         </div>
 
         <motion.div variants={container} initial="hidden" animate="show" className="relative z-10 mx-auto max-w-[1200px] px-6 pt-[240px] pb-20 flex flex-col items-center gap-8">

@@ -32,15 +32,15 @@ export function Dashboard() {
             </div>
           ))}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/50" />
 
         <div className="relative z-10 px-10 py-10 flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-white/40 mb-3">Dashboard</p>
+            <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-white/70 mb-3">Dashboard</p>
             <h1 className="text-[32px] font-medium text-white" style={{ letterSpacing: '-0.03em' }}>
               Welcome back, <span className="text-primary">Matheus</span>
             </h1>
-            <p className="text-[15px] text-white/50 mt-2">Your AI models generated 47 images this week.</p>
+            <p className="text-[15px] text-white/70 mt-2">Your AI models generated 47 images this week.</p>
           </div>
 
           <div className="flex items-center gap-8">
@@ -51,7 +51,7 @@ export function Dashboard() {
             ].map((s, i) => (
               <div key={i} className="text-center">
                 <p className="text-[24px] font-semibold text-white">{s.value}</p>
-                <p className="text-[11px] text-white/30 uppercase tracking-wider mt-0.5">{s.label}</p>
+                <p className="text-[11px] text-white/60 uppercase tracking-wider mt-0.5">{s.label}</p>
               </div>
             ))}
           </div>

@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 const mainNav = [
   { to: '/', label: 'Dashboard', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25' },
@@ -35,6 +36,14 @@ function NavItem({ item }: { item: typeof mainNav[0] }) {
 }
 
 export function Sidebar() {
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
   return (
     <div className="fixed left-3 top-3 bottom-3 w-[220px] z-30 flex flex-col" style={{ fontFamily: "'Geist', sans-serif" }}>
       <div
@@ -77,7 +86,7 @@ export function Sidebar() {
           <div className="px-3.5 py-3 rounded-xl bg-gray-50/80">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] text-gray-500 font-medium">Credits</span>
-              <span className="text-[13px] font-semibold text-black">1,343</span>
+              <span className="text-[13px] font-semibold text-black">{profile?.credits?.toLocaleString() ?? '—'}</span>
             </div>
             <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
               <div className="h-full bg-primary rounded-full" style={{ width: '67%' }} />
@@ -89,15 +98,21 @@ export function Sidebar() {
         <div className="px-3 py-3 border-t border-gray-100/80">
           <div className="flex items-center gap-2.5 px-1">
             <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center text-white text-[11px] font-medium flex-shrink-0">
-              M
+              {profile?.name?.[0]?.toUpperCase() || '?'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-medium text-black leading-tight">Matheus</p>
-              <p className="text-[11px] text-gray-500 truncate">Free plan</p>
+              <p className="text-[13px] font-medium text-black leading-tight">{profile?.name || 'User'}</p>
+              <p className="text-[11px] text-gray-500 truncate">{profile?.email || ''}</p>
             </div>
-            <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-            </svg>
+            <button
+              onClick={handleSignOut}
+              title="Sign out"
+              className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 cursor-pointer transition-colors flex-shrink-0"
+            >
+              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>

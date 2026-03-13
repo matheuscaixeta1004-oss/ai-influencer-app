@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Button, StepIndicator, Badge } from '../../components/ui';
 import { CREDITS } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
+import { createModel, uploadModelPhotos } from '../../lib/models';
+import { deductCredits } from '../../lib/credits';
 import { StepIdentity } from './StepIdentity';
 import { StepFace } from './StepFace';
 import { StepBody } from './StepBody';
@@ -59,134 +62,168 @@ const initialData: ModelFormData = {
 };
 
 const steps = [
-  { label: 'Identidade', description: 'Nome, nicho, bio' },
-  { label: 'Rosto', description: 'Upload de fotos' },
-  { label: 'Corpo', description: 'Características físicas' },
-  { label: 'Cenário', description: 'Ambiente e estilo' },
+  { title: 'Identity', description: 'Name, age, niche' },
+  { title: 'Face', description: 'Reference photos' },
+  { title: 'Body', description: 'Physical traits' },
+  { title: 'Scenario', description: 'Style & personality' },
 ];
 
 export function CreateModelWizard() {
   const navigate = useNavigate();
-  const [current, setCurrent] = useState(0);
-  const [data, setData] = useState<ModelFormData>(initialData);
-  const [creating, setCreating] = useState(false);
+  const { user, profile, refreshProfile } = useAuth();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState<ModelFormData>(initialData);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const update = (partial: Partial<ModelFormData>) => {
-    setData((prev) => ({ ...prev, ...partial }));
+  const updateData = (partial: Partial<ModelFormData>) => {
+    setFormData((prev) => ({ ...prev, ...partial }));
   };
 
-  const next = () => setCurrent((s) => Math.min(s + 1, 4));
-  const prev = () => setCurrent((s) => Math.max(s - 1, 0));
+  const canAdvance = () => {
+    switch (currentStep) {
+      case 0: return !!formData.name && !!formData.ethnicity && !!formData.niche;
+      case 1: return formData.photos.length >= 1;
+      case 2: return !!formData.skinTone && !!formData.bodyType;
+      case 3: return !!formData.environment;
+      default: return false;
+    }
+  };
 
-  const handleCreate = () => {
-    setCreating(true);
-    setTimeout(() => {
-      setCreating(false);
+  const handleFinish = async () => {
+    if (!user || !profile) return;
+    setSaving(true);
+    setError('');
+
+    try {
+      // Check credits
+      if (!profile.is_dev && profile.credits < CREDITS.CREATE_MODEL) {
+        setError(`Not enough credits. You need ${CREDITS.CREATE_MODEL} credits to create a model.`);
+        setSaving(false);
+        return;
+      }
+
+      // Deduct credits
+      const ok = await deductCredits(user.id, CREDITS.CREATE_MODEL, `New model: ${formData.name}`);
+      if (!ok) {
+        setError('Failed to deduct credits. Please try again.');
+        setSaving(false);
+        return;
+      }
+
+      // Create model
+      const model = await createModel(user.id, {
+        name: formData.name,
+        age: formData.age,
+        ethnicity: formData.ethnicity,
+        location: formData.location,
+        niche: formData.niche,
+        bio: formData.bio,
+        config: {
+          skinTone: formData.skinTone,
+          bodyType: formData.bodyType,
+          height: formData.height,
+          hairColor: formData.hairColor,
+          hairType: formData.hairType,
+          hairLength: formData.hairLength,
+          eyeColor: formData.eyeColor,
+          extras: formData.extras,
+          environment: formData.environment,
+          roomStyle: formData.roomStyle,
+          lighting: formData.lighting,
+          personalityTags: formData.personalityTags,
+        },
+      });
+
+      // Upload photos
+      if (formData.photos.length > 0) {
+        await uploadModelPhotos(model.id, formData.photos);
+      }
+
+      // Refresh profile (credits updated)
+      await refreshProfile();
+
+      // Navigate to models list
       navigate('/models');
-    }, 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-3xl mx-auto space-y-6"
+      style={{ fontFamily: "'Geist', sans-serif" }}
+    >
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-sidebar">Criar Nova Modelo</h2>
-          <p className="text-sm text-gray-500">Preencha as informações em 4 passos</p>
+          <h1 className="text-[22px] font-medium text-black" style={{ letterSpacing: '-0.02em' }}>
+            Create New Model
+          </h1>
+          <p className="text-[14px] text-gray-400 mt-1">
+            Step {currentStep + 1} of {steps.length} — {steps[currentStep].description}
+          </p>
         </div>
-        <Button variant="ghost" onClick={() => navigate('/models')}>
-          ✕ Cancelar
-        </Button>
+        <Badge variant="warning">{CREDITS.CREATE_MODEL} credits</Badge>
       </div>
 
-      <StepIndicator steps={steps} current={current} />
+      <StepIndicator
+        steps={steps.map((s) => ({ label: s.title, description: s.description }))}
+        current={currentStep}
+      />
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={current}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
+      {error && (
+        <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200/50 text-[13px] text-red-600">
+          {error}
+        </div>
+      )}
+
+      <Card className="!p-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            {currentStep === 0 && <StepIdentity data={formData} update={updateData} />}
+            {currentStep === 1 && <StepFace data={formData} update={updateData} />}
+            {currentStep === 2 && <StepBody data={formData} update={updateData} />}
+            {currentStep === 3 && <StepScenario data={formData} update={updateData} />}
+          </motion.div>
+        </AnimatePresence>
+      </Card>
+
+      <div className="flex justify-between">
+        <Button
+          variant="secondary"
+          onClick={() => currentStep === 0 ? navigate('/models') : setCurrentStep((s) => s - 1)}
         >
-          {current === 0 && <StepIdentity data={data} update={update} />}
-          {current === 1 && <StepFace data={data} update={update} />}
-          {current === 2 && <StepBody data={data} update={update} />}
-          {current === 3 && <StepScenario data={data} update={update} />}
-          {current === 4 && (
-            <Card>
-              <h3 className="text-lg font-bold text-sidebar mb-4">Resumo</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Identidade</p>
-                  <p className="font-semibold text-sidebar">{data.name || '—'}</p>
-                  <p className="text-gray-500">{data.age} anos · {data.ethnicity || '—'}</p>
-                  <p className="text-gray-500">{data.location || '—'}</p>
-                  <Badge variant="primary" className="mt-1">{data.niche || '—'}</Badge>
-                </div>
-                <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Fotos</p>
-                  <p className="font-semibold text-sidebar">{data.photos.length} fotos</p>
-                  {data.photoPreviews.length > 0 && (
-                    <div className="flex gap-1 mt-2 flex-wrap">
-                      {data.photoPreviews.slice(0, 4).map((url, i) => (
-                        <img key={i} src={url} className="w-10 h-10 rounded-lg object-cover" alt="" />
-                      ))}
-                      {data.photoPreviews.length > 4 && (
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
-                          +{data.photoPreviews.length - 4}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Corpo</p>
-                  <p className="text-gray-500">Pele: {data.skinTone || '—'}</p>
-                  <p className="text-gray-500">Tipo: {data.bodyType || '—'}</p>
-                  <p className="text-gray-500">Altura: {data.height}cm</p>
-                  <p className="text-gray-500">Cabelo: {data.hairColor} {data.hairType} {data.hairLength}</p>
-                </div>
-                <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Cenário</p>
-                  <p className="text-gray-500">Ambiente: {data.environment || '—'}</p>
-                  <p className="text-gray-500">Iluminação: {data.lighting || '—'}</p>
-                  {data.personalityTags.length > 0 && (
-                    <div className="flex gap-1 mt-1 flex-wrap">
-                      {data.personalityTags.map((tag) => (
-                        <Badge key={tag} variant="default">{tag}</Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="warning">{CREDITS.CREATE_MODEL} créditos</Badge>
-                  <span className="text-xs text-gray-400">serão debitados</span>
-                </div>
-                <p className="text-xs text-gray-500">{data.bio}</p>
-              </div>
-            </Card>
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-2">
-        <Button variant="ghost" onClick={prev} disabled={current === 0}>
-          ← Voltar
+          {currentStep === 0 ? 'Cancel' : 'Back'}
         </Button>
-        {current < 4 ? (
-          <Button onClick={next}>
-            Próximo →
+
+        {currentStep < steps.length - 1 ? (
+          <Button
+            onClick={() => setCurrentStep((s) => s + 1)}
+            disabled={!canAdvance()}
+          >
+            Next Step
           </Button>
         ) : (
-          <Button onClick={handleCreate} loading={creating}>
-            🚀 Criar Modelo ({CREDITS.CREATE_MODEL} créditos)
+          <Button
+            onClick={handleFinish}
+            disabled={!canAdvance() || saving}
+            loading={saving}
+          >
+            {saving ? 'Creating Model...' : `Create Model · ${CREDITS.CREATE_MODEL} credits`}
           </Button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

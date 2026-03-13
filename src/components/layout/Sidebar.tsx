@@ -22,7 +22,7 @@ function NavItem({ item }: { item: typeof mainNav[0] }) {
         transition-all duration-150
         ${isActive
           ? 'text-primary bg-primary/[0.07]'
-          : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+          : 'text-gray-600 hover:text-black hover:bg-gray-50'
         }
       `}
     >
@@ -59,14 +59,14 @@ export function Sidebar() {
 
         {/* Main nav */}
         <nav className="flex-1 px-2.5 space-y-0.5">
-          <p className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-300 px-3 mb-2">Menu</p>
+          <p className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 px-3 mb-2">Menu</p>
           {mainNav.map((item) => (
             <NavItem key={item.to} item={item} />
           ))}
 
           <div className="h-px bg-gray-100 my-3 mx-2" />
 
-          <p className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-300 px-3 mb-2">Account</p>
+          <p className="text-[10px] font-semibold tracking-[0.12em] uppercase text-gray-400 px-3 mb-2">Account</p>
           {bottomNav.map((item) => (
             <NavItem key={item.to} item={item} />
           ))}
@@ -76,7 +76,7 @@ export function Sidebar() {
         <div className="mx-2.5 mb-2.5">
           <div className="px-3.5 py-3 rounded-xl bg-gray-50/80">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-gray-400 font-medium">Credits</span>
+              <span className="text-[11px] text-gray-500 font-medium">Credits</span>
               <span className="text-[13px] font-semibold text-black">1,343</span>
             </div>
             <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
@@ -93,7 +93,7 @@ export function Sidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-medium text-black leading-tight">Matheus</p>
-              <p className="text-[11px] text-gray-400 truncate">Free plan</p>
+              <p className="text-[11px] text-gray-500 truncate">Free plan</p>
             </div>
             <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />

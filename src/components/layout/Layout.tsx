@@ -4,11 +4,12 @@ import { Header } from './Header';
 
 export function Layout() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FAFAFA]" style={{ fontFamily: "'Geist', sans-serif" }}>
       <Sidebar />
-      <div className="ml-60">
+      {/* offset: sidebar 220px + left margin 12px + gap 12px = 244px */}
+      <div className="ml-[244px]">
         <Header />
-        <main className="px-8 py-6 max-w-[1280px] min-h-screen">
+        <main className="px-8 py-6 max-w-[1200px] min-h-screen">
           <Outlet />
         </main>
       </div>

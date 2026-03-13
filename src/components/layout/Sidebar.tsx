@@ -12,26 +12,23 @@ const navItems = [
 export function Sidebar() {
   return (
     <aside
-      className="fixed left-0 top-0 bottom-0 w-60 flex flex-col z-30"
-      style={{
-        background: 'rgba(26, 26, 46, 0.75)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-      }}
+      className="fixed left-0 top-0 bottom-0 w-60 flex flex-col z-30 bg-white border-r border-gray-100"
+      style={{ fontFamily: "'Geist', sans-serif" }}
     >
       {/* Logo */}
-      <div className="px-5 h-14 flex items-center gap-2.5 border-b border-white/5">
-        <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center">
-          <svg className="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <div className="px-5 h-14 flex items-center gap-2.5 border-b border-gray-100">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{
+          background: 'linear-gradient(180deg, #00BFF5 0%, #0099D4 100%)',
+        }}>
+          <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
           </svg>
         </div>
-        <span className="text-white font-semibold text-[15px] tracking-tight">AI Influencer</span>
+        <span className="text-[15px] font-semibold text-black tracking-tight">AI Influencer</span>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-3 space-y-px">
+      <nav className="flex-1 px-3 py-3 space-y-0.5">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -41,40 +38,45 @@ export function Sidebar() {
               flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px]
               transition-all duration-100
               ${isActive
-                ? 'text-primary bg-white/[0.08]'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.04]'
+                ? 'text-primary bg-primary/[0.06] font-medium'
+                : 'text-gray-400 hover:text-black hover:bg-gray-50 font-medium'
               }
             `}
           >
             <svg className="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
             </svg>
-            <span className="font-medium">{item.label}</span>
+            <span>{item.label}</span>
           </NavLink>
         ))}
       </nav>
 
-      {/* Upgrade prompt */}
+      {/* Upgrade */}
       <div className="px-3 mb-3">
-        <div className="p-3.5 rounded-xl bg-white/[0.05] border border-white/[0.06]">
-          <p className="text-[12px] text-gray-400 mb-2">Free plan · 1/5 models</p>
-          <button className="w-full py-2 rounded-lg bg-primary text-white text-[12px] font-medium hover:bg-primary-dark transition-colors cursor-pointer">
+        <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+          <p className="text-[12px] text-gray-400 mb-3">Free plan · 1 of 5 models</p>
+          <button
+            className="w-full py-2.5 rounded-lg text-[12px] font-medium text-white cursor-pointer transition-all hover:brightness-110"
+            style={{
+              background: 'linear-gradient(180deg, #00BFF5 0%, #00AFF0 50%, #0099D4 100%)',
+            }}
+          >
             Upgrade to Creator
           </button>
         </div>
       </div>
 
       {/* User */}
-      <div className="px-4 py-3 border-t border-white/5">
+      <div className="px-4 py-3 border-t border-gray-100">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-[12px] font-medium">
+          <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center text-white text-[12px] font-medium">
             M
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-[13px] font-medium">Matheus</p>
-            <p className="text-gray-500 text-[11px] truncate">matheus@email.com</p>
+            <p className="text-black text-[13px] font-medium">Matheus</p>
+            <p className="text-gray-400 text-[11px] truncate">matheus@email.com</p>
           </div>
-          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
           </svg>
         </div>

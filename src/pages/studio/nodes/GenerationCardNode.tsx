@@ -259,15 +259,21 @@ function ImageGenCard({
 
         <div
           className="relative mx-3 mt-3 rounded-xl overflow-hidden flex items-center justify-center transition-all duration-300"
-          style={{ width: previewDimensions.width, height: previewDimensions.height, background: CARD.previewBg, alignSelf: 'center' }}
+          style={{
+            width: previewDimensions.width,
+            height: data.generatedImageUrl ? 'auto' : previewDimensions.height,
+            minHeight: data.generatedImageUrl ? previewDimensions.height : undefined,
+            background: CARD.previewBg,
+            alignSelf: 'center',
+          }}
         >
           {isGenerating ? (
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-3" style={{ height: previewDimensions.height, display: 'flex', justifyContent: 'center' }}>
               <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-blue-400 animate-spin" />
               <span className="text-[12px] text-gray-400">Gerando...</span>
             </div>
           ) : data.generatedImageUrl ? (
-            <img src={data.generatedImageUrl} alt="Gerada" className="w-full h-full object-cover" />
+            <img src={data.generatedImageUrl} alt="Gerada" className="w-full rounded-xl" style={{ display: 'block' }} />
           ) : (
             <div className="flex flex-col items-center gap-2 opacity-40">
               <MdImage size={40} className="text-gray-300" />

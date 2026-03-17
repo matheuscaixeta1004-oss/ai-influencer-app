@@ -18,6 +18,8 @@ import {
 import '@xyflow/react/dist/style.css';
 import { MdAutoFixHigh, MdAdd, MdPerson, MdImage, MdVideocam, MdDelete, MdEdit } from 'react-icons/md';
 import { DeletableEdge } from './edges';
+import { useSnapGuides } from './hooks/useSnapGuides';
+import { SnapGuides } from './components/SnapGuides';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserModels, getModelPhotos } from '../../lib/models';
@@ -174,6 +176,9 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     triggerAutoSave();
   }, [onEdgesChange, triggerAutoSave]);
 
+  // Snap guides
+  const { guides, onNodeDrag: snapOnNodeDrag, onNodeDragStop: snapOnNodeDragStop } = useSnapGuides(nodes);
+
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [contextMenuFlowPos, setContextMenuFlowPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -281,11 +286,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     return sourceType === targetType;
   }, []);
 
-  // ── Handle edge connections ──────────────────────────────────────────
-  const onConnect: OnConnect = useCallback((connection) => {
-    if (!isValidConnection(connection)) return;
-    setEdges((eds) => addEdge({ ...connection, ...defaultEdgeOptions }, eds));
-  }, [setEdges, isValidConnection]);
+  // ── Handle edge connections (see onConnectWithClear below) ──────────
 
   // ── Track last pointer position (reliable, always available) ────────
   const lastPointerRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -331,24 +332,25 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     ref_image: [],
   };
 
+  // When a connection completes successfully (handle→handle), clear pending
+  const onConnectWithClear: OnConnect = useCallback((connection) => {
+    if (!isValidConnection(connection)) return;
+    setEdges((eds) => addEdge({ ...connection, ...defaultEdgeOptions }, eds));
+    pendingConnectionRef.current = null; // Consumed
+  }, [setEdges, isValidConnection]);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onConnectEnd = useCallback((_event: any) => {
     const pending = pendingConnectionRef.current;
     if (!pending) return;
+    // If onConnect already consumed this, do nothing
+    // (pendingConnectionRef was cleared in onConnectWithClear)
 
     const { x: cx, y: cy } = lastPointerRef.current;
     if (!cx && !cy) { pendingConnectionRef.current = null; return; }
 
-    // Check what element is under the cursor using document.elementFromPoint
+    // Check if dropped on a card → auto-connect
     const elUnderCursor = document.elementFromPoint(cx, cy) as HTMLElement | null;
-
-    // If on a handle, onConnect already handled it
-    if (elUnderCursor?.closest?.('.react-flow__handle')) {
-      pendingConnectionRef.current = null;
-      return;
-    }
-
-    // If on a card node → auto-connect to best compatible handle
     const cardEl = elUnderCursor?.closest?.('.react-flow__node') as HTMLElement | null;
     if (cardEl) {
       const targetNodeId = cardEl.getAttribute('data-id');
@@ -373,7 +375,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
       }
     }
 
-    // Dropped on empty space → open context menu
+    // Dropped on empty space or incompatible card → open context menu
     const flowPos = screenToFlowPosition({ x: cx, y: cy });
     setContextMenuFlowPos(flowPos);
     setContextMenu({ x: cx, y: cy });
@@ -568,7 +570,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         onNodesChange={wrappedOnNodesChange}
         onEdgesChange={wrappedOnEdgesChange}
         onNodesDelete={handleNodesDelete}
-        onConnect={onConnect}
+        onConnect={onConnectWithClear}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
         isValidConnection={isValidConnection}
@@ -582,10 +584,16 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         maxZoom={2}
         proOptions={{ hideAttribution: true }}
         className="studio-canvas"
+        onNodeDrag={snapOnNodeDrag}
+        onNodeDragStop={snapOnNodeDragStop}
         onContextMenu={handleContextMenu}
         onPaneClick={handlePaneClick}
+        selectionOnDrag
+        panOnDrag={[0]}
+        selectionKeyCode="Shift"
         style={{ background: '#FAFAFA' }}
       >
+        <SnapGuides guides={guides} />
         <Background
           variant={BackgroundVariant.Dots}
           gap={28}

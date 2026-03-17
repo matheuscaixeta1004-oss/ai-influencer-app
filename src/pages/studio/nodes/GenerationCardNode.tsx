@@ -169,47 +169,37 @@ function HandleBtn({
   topOffset: number;
 }) {
   const isLeft = position === Position.Left;
+  // The Handle IS the visual circle — single element, no layers
   return (
-    <div
-      className="nodrag nopan absolute"
+    <Handle
+      type={type}
+      position={position}
+      id={id}
+      className="nodrag nopan"
+      title={title}
       style={{
+        position: 'absolute',
         top: topOffset,
-        [isLeft ? 'left' : 'right']: -38,
+        [isLeft ? 'left' : 'right']: -42,
         width: 36,
         height: 36,
+        borderRadius: '50%',
+        background: CARD.handleBg,
+        border: CARD.handleBorder,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'crosshair',
         zIndex: 50,
+        transform: 'none',
+        color: '#9CA3AF',
       }}
-      title={title}
+      isConnectable={true}
     >
-      {/* Visual circle */}
-      <div
-        className="absolute inset-0 rounded-full flex items-center justify-center text-gray-400 pointer-events-none"
-        style={{ background: CARD.handleBg, border: CARD.handleBorder }}
-      >
+      <span className="pointer-events-none" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {icon}
-      </div>
-      {/* Handle — full circle, nodrag prevents card drag interference */}
-      <Handle
-        type={type}
-        position={position}
-        id={id}
-        className="nodrag nopan"
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: 36,
-          height: 36,
-          borderRadius: '50%',
-          background: 'transparent',
-          border: 'none',
-          zIndex: 50,
-          cursor: 'crosshair',
-          opacity: 0,
-        }}
-        isConnectable={true}
-      />
-    </div>
+      </span>
+    </Handle>
   );
 }
 

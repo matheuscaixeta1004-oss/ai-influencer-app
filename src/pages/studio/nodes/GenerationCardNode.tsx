@@ -518,15 +518,19 @@ function LegacyCard({ data }: { data: GenerationCardNodeData }) {
   });
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
 
-  const TitleIcon = data.category === 'prompt' ? MdTextFields : MdImage;
+  const isText = data.category === 'prompt';
+  const TitleIcon = isText ? MdTextFields : MdImage;
+  // Typed handle IDs: prompt → text-out, ref_image → image-out
+  const sourceHandleId = isText ? 'text-out' : 'image-out';
+  const targetHandleId = isText ? 'text-in' : 'image-in';
 
   return (
     <div className="relative" style={{ overflow: 'visible' }}>
       {data.hasTargetHandle && (
-        <HandleBtn id="input" type="target" position={Position.Left} icon={TitleIcon === MdTextFields ? <MdTextFields size={16} /> : <MdImage size={16} />} title="Entrada" topOffset={40} />
+        <HandleBtn id={targetHandleId} type="target" position={Position.Left} icon={isText ? <MdTextFields size={16} /> : <MdImage size={16} />} title="Entrada" topOffset={40} />
       )}
       {data.hasSourceHandle && (
-        <HandleBtn id="output" type="source" position={Position.Right} icon={TitleIcon === MdTextFields ? <MdTextFields size={16} /> : <MdImage size={16} />} title="Saída" topOffset={40} />
+        <HandleBtn id={sourceHandleId} type="source" position={Position.Right} icon={isText ? <MdTextFields size={16} /> : <MdImage size={16} />} title="Saída" topOffset={40} />
       )}
 
       <div

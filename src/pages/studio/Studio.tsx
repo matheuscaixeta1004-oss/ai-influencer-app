@@ -224,23 +224,28 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   }, []);
 
   // ── Handle type classification ──────────────────────────────────────
+  // Every handle has a data type. Only same-type connections are allowed.
   const getHandleDataType = (handleId: string | null | undefined): string => {
-    if (!handleId) return 'any';
-    if (handleId === 'output' || handleId === 'input') return 'any'; // legacy
-    if (handleId.startsWith('text')) return 'text';
-    if (handleId.startsWith('image') || handleId === 'output-ref' || handleId.startsWith('keyframe')) return 'image';
-    if (handleId.startsWith('video')) return 'video';
-    if (handleId.startsWith('audio')) return 'audio';
-    if (handleId.startsWith('model')) return 'image'; // model output → image reference
-    return 'any';
+    if (!handleId) return 'unknown';
+    // Text handles
+    if (handleId === 'text-ref' || handleId === 'text-out' || handleId === 'text-in') return 'text';
+    // Image handles
+    if (handleId === 'image-ref' || handleId === 'image-ref-2' || handleId === 'image-out'
+        || handleId === 'output-ref' || handleId === 'model-out'
+        || handleId === 'keyframe-start' || handleId === 'keyframe-end') return 'image';
+    // Video handles
+    if (handleId === 'video-ref') return 'video';
+    // Audio handles
+    if (handleId === 'audio-ref') return 'audio';
+    return 'unknown';
   };
 
-  // ── Connection validation — compatible types only ──────────────────
+  // ── Connection validation — same type only, no unknowns ─────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isValidConnection = useCallback((connection: any) => {
     const sourceType = getHandleDataType(connection.sourceHandle);
     const targetType = getHandleDataType(connection.targetHandle);
-    if (sourceType === 'any' || targetType === 'any') return true;
+    if (sourceType === 'unknown' || targetType === 'unknown') return false;
     return sourceType === targetType;
   }, []);
 
@@ -366,7 +371,11 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         ? { targets: ['text-ref', 'image-ref', 'image-ref-2', 'keyframe-start', 'keyframe-end', 'video-ref', 'audio-ref'], sources: [] }
         : tmpl.category === 'model_ref'
         ? { targets: [], sources: ['model-out'] }
-        : { targets: ['input'], sources: ['output'] };
+        : tmpl.category === 'prompt'
+        ? { targets: [], sources: ['text-out'] }
+        : tmpl.category === 'ref_image'
+        ? { targets: [], sources: ['image-out'] }
+        : { targets: [], sources: [] };
 
       let newEdge: Parameters<typeof addEdge>[0] | null = null;
 

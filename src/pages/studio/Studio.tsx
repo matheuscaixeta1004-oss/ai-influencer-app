@@ -5,6 +5,7 @@ import {
   type Node,
   type Edge,
   type NodeTypes,
+  type EdgeTypes,
   type OnConnect,
   type OnNodesDelete,
   useNodesState,
@@ -16,6 +17,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { MdAutoFixHigh, MdAdd, MdPerson, MdImage, MdVideocam, MdDelete, MdEdit } from 'react-icons/md';
+import { DeletableEdge } from './edges';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserModels, getModelPhotos } from '../../lib/models';
@@ -46,9 +48,13 @@ const nodeTypes: NodeTypes = {
   resultCard: ResultCardNode,
 };
 
+const edgeTypes: EdgeTypes = {
+  deletable: DeletableEdge,
+};
+
 // Default edge style — soft bezier, dark gray
 const defaultEdgeOptions = {
-  type: 'default',
+  type: 'deletable',
   style: { stroke: '#94A3B8', strokeWidth: 2 },
   animated: false,
 };
@@ -273,22 +279,36 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   const onConnectEnd = useCallback((event: MouseEvent | TouchEvent) => {
     if (!pendingConnectionRef.current) return;
 
-    // Check if dropped on a valid target (another handle) — if so, onConnect handled it
-    const target = (event.target || (event as TouchEvent).changedTouches?.[0]?.target) as HTMLElement | null;
-    if (target?.closest?.('.react-flow__handle')) {
+    // Extract the real DOM event (ReactFlow may wrap in synthetic event)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw: any = (event as any).nativeEvent ?? event;
+
+    // Check if dropped on a valid target handle
+    const el = (raw.target ?? raw.changedTouches?.[0]?.target) as HTMLElement | null;
+    if (el?.closest?.('.react-flow__handle')) {
       pendingConnectionRef.current = null;
       return;
     }
 
-    // Dropped on empty space — open context menu (keep pendingRef alive for handleMenuSelect!)
-    const clientX = 'clientX' in event ? event.clientX : (event as TouchEvent).changedTouches?.[0]?.clientX ?? 0;
-    const clientY = 'clientY' in event ? event.clientY : (event as TouchEvent).changedTouches?.[0]?.clientY ?? 0;
+    // Extract coordinates — try multiple approaches
+    let cx = 0;
+    let cy = 0;
+    if (typeof raw.clientX === 'number') {
+      cx = raw.clientX;
+      cy = raw.clientY;
+    } else if (raw.changedTouches?.[0]) {
+      cx = raw.changedTouches[0].clientX;
+      cy = raw.changedTouches[0].clientY;
+    } else if (typeof (event as any).clientX === 'number') {
+      cx = (event as any).clientX;
+      cy = (event as any).clientY;
+    }
 
-    if (!clientX && !clientY) { pendingConnectionRef.current = null; return; }
+    if (!cx && !cy) { pendingConnectionRef.current = null; return; }
 
-    const flowPos = screenToFlowPosition({ x: clientX, y: clientY });
+    const flowPos = screenToFlowPosition({ x: cx, y: cy });
     setContextMenuFlowPos(flowPos);
-    setContextMenu({ x: clientX, y: clientY });
+    setContextMenu({ x: cx, y: cy });
     // pendingConnectionRef stays alive — handleMenuSelect will use it and then clear it
   }, [screenToFlowPosition]);
 
@@ -465,7 +485,10 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         onConnectEnd={onConnectEnd}
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
+        edgesReconnectable
+        edgesFocusable
         fitView
         fitViewOptions={{ padding: 0.15 }}
         minZoom={0.2}

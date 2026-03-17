@@ -291,22 +291,22 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         <div
           className="absolute bottom-4 left-4 z-10 px-3 py-2 rounded-xl"
           style={{
-            background: '#1e1e1e',
-            border: '1px solid rgba(0,0,0,0.06)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            background: '#FFFFFF',
+            border: '1px solid rgba(0,0,0,0.08)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.03)',
           }}
         >
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Modelo ativo</label>
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Modelo ativo</label>
           <select
             value={selectedModel?.id || ''}
             onChange={(e) => {
               const m = models.find((mod) => mod.id === e.target.value);
               if (m) setSelectedModel(m);
             }}
-            className="block mt-1 text-[13px] font-medium bg-transparent border-none outline-none cursor-pointer text-gray-800"
+            className="block mt-1 text-[13px] font-medium bg-transparent text-gray-700 border-none outline-none cursor-pointer"
           >
             {models.map((m) => (
-              <option key={m.id} value={m.id} style={{ background: '#222' }}>{m.name}</option>
+              <option key={m.id} value={m.id}>{m.name}</option>
             ))}
           </select>
         </div>

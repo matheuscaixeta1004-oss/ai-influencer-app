@@ -114,26 +114,25 @@ export function ContextMenu({ x, y, onSelect, onClose }: ContextMenuProps) {
       <div
         className="w-[240px] rounded-xl overflow-hidden"
         style={{
-          background: '#1a1a1a',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)',
+          background: '#FFFFFF',
+          border: '1px solid rgba(0,0,0,0.08)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
         }}
       >
         {/* Search */}
         <div className="px-3 pt-3 pb-2">
           <div
             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.06)' }}
+            style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.06)' }}
           >
-            <MdSearch size={14} style={{ color: 'rgba(255,255,255,0.3)' }} />
+            <MdSearch size={14} className="text-gray-400" />
             <input
               ref={searchRef}
               type="text"
               placeholder="Buscar..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 bg-transparent text-[13px] outline-none"
-              style={{ color: 'rgba(255,255,255,0.8)', caretColor: 'white' }}
+              className="flex-1 bg-transparent text-[13px] text-gray-700 outline-none placeholder-gray-400"
             />
           </div>
         </div>
@@ -142,11 +141,7 @@ export function ContextMenu({ x, y, onSelect, onClose }: ContextMenuProps) {
         <div className="px-1.5 pb-2 max-h-[320px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
           {Object.entries(grouped).map(([category, items], gi) => (
             <div key={category}>
-              {/* Category label */}
-              <div
-                className="px-2.5 pt-2 pb-1 text-[10px] font-bold tracking-[0.08em]"
-                style={{ color: 'rgba(255,255,255,0.3)' }}
-              >
+              <div className="px-2.5 pt-2 pb-1 text-[10px] font-bold tracking-[0.08em] text-gray-400">
                 {category}
               </div>
 
@@ -162,18 +157,17 @@ export function ContextMenu({ x, y, onSelect, onClose }: ContextMenuProps) {
                       transition-colors duration-75
                       ${item.disabled
                         ? 'opacity-35 cursor-not-allowed'
-                        : 'hover:bg-white/[0.07] cursor-pointer'
+                        : 'hover:bg-black/[0.04] cursor-pointer'
                       }
                     `}
                   >
                     <span className="w-5 flex items-center justify-center flex-shrink-0">
-                      <Icon size={16} style={{ color: 'rgba(255,255,255,0.6)' }} />
+                      <Icon size={16} className="text-gray-400" />
                     </span>
-                    <span className="text-[13px] flex-1" style={{ color: 'rgba(255,255,255,0.85)' }}>{item.label}</span>
+                    <span className="text-[13px] flex-1 text-gray-700">{item.label}</span>
                     {item.comingSoon && (
                       <span
-                        className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                        style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.3)' }}
+                        className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400"
                       >
                         SOON
                       </span>
@@ -182,15 +176,14 @@ export function ContextMenu({ x, y, onSelect, onClose }: ContextMenuProps) {
                 );
               })}
 
-              {/* Separator between categories */}
               {gi < Object.keys(grouped).length - 1 && (
-                <div className="mx-2.5 my-1 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }} />
+                <div className="mx-2.5 my-1 border-t border-gray-100" />
               )}
             </div>
           ))}
 
           {filtered.length === 0 && (
-            <div className="px-3 py-4 text-center text-[12px]" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            <div className="px-3 py-4 text-center text-[12px] text-gray-400">
               Nenhum resultado
             </div>
           )}

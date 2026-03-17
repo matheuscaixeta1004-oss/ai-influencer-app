@@ -14,6 +14,21 @@ import {
 } from 'react-icons/md';
 import type { CardCategory } from '../types';
 
+// ─── Light theme tokens ──────────────────────────────────────────────
+const CARD = {
+  bg: '#FFFFFF',
+  border: '1px solid rgba(0,0,0,0.08)',
+  shadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.03)',
+  divider: '1px solid rgba(0,0,0,0.06)',
+  previewBg: '#F3F4F6',
+  pillBg: '#F3F4F6',
+  pillBorder: '1px solid rgba(0,0,0,0.06)',
+  handleBg: '#F3F4F6',
+  handleBorder: '1px solid rgba(0,0,0,0.1)',
+  inputBg: '#F9FAFB',
+  inputBorder: '1px solid rgba(0,0,0,0.08)',
+};
+
 // ─── Aspect ratio → preview dimensions ───────────────────────────────
 function getPreviewDimensions(ratio: string, maxWidth: number) {
   const BASE_HEIGHT = 220;
@@ -24,16 +39,13 @@ function getPreviewDimensions(ratio: string, maxWidth: number) {
   if (!w || !h) return { width: maxWidth, height: BASE_HEIGHT, cardWidth: maxWidth + 26 };
 
   const aspect = w / h;
-
   let previewW: number;
   let previewH: number;
 
   if (aspect >= 1) {
-    // Landscape or square
     previewW = maxWidth;
     previewH = Math.round(maxWidth / aspect);
   } else {
-    // Portrait — limit height, shrink width
     previewH = Math.round(BASE_HEIGHT * 1.4);
     previewW = Math.round(previewH * aspect);
     if (previewW > maxWidth) {
@@ -43,7 +55,6 @@ function getPreviewDimensions(ratio: string, maxWidth: number) {
   }
 
   const cardWidth = Math.max(MIN_CARD, Math.min(MAX_CARD, previewW + 26));
-
   return { width: previewW, height: previewH, cardWidth };
 }
 
@@ -80,22 +91,19 @@ function PillSelect({
   return (
     <div
       className="relative flex items-center gap-1 px-3 py-1.5 rounded-full cursor-pointer select-none"
-      style={{ background: '#333', border: '1px solid rgba(255,255,255,0.08)' }}
+      style={{ background: CARD.pillBg, border: CARD.pillBorder }}
     >
       {icon && <span className="text-gray-400 flex-shrink-0">{icon}</span>}
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent text-white text-[12px] font-medium outline-none cursor-pointer appearance-none pr-3"
-        style={{ color: '#e0e0e0' }}
+        className="bg-transparent text-gray-700 text-[12px] font-medium outline-none cursor-pointer appearance-none pr-3"
       >
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value} style={{ background: '#222', color: '#e0e0e0' }}>
-            {opt.label}
-          </option>
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
-      <svg className="w-3 h-3 text-gray-500 flex-shrink-0 pointer-events-none absolute right-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg className="w-3 h-3 text-gray-400 flex-shrink-0 pointer-events-none absolute right-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
       </svg>
     </div>
@@ -107,18 +115,18 @@ function QuantityPill({ value, onChange }: { value: number; onChange: (v: number
   return (
     <div
       className="flex items-center gap-1 rounded-full px-2 py-1.5"
-      style={{ background: '#333', border: '1px solid rgba(255,255,255,0.08)' }}
+      style={{ background: CARD.pillBg, border: CARD.pillBorder }}
     >
       <button
         onClick={() => onChange(Math.max(1, value - 1))}
-        className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10"
+        className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-black/5"
       >
         <MdRemove size={14} />
       </button>
-      <span className="text-[12px] font-semibold text-white w-5 text-center">x{value}</span>
+      <span className="text-[12px] font-semibold text-gray-700 w-5 text-center">x{value}</span>
       <button
         onClick={() => onChange(Math.min(4, value + 1))}
-        className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10"
+        className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-black/5"
       >
         <MdAdd size={14} />
       </button>
@@ -130,10 +138,10 @@ function QuantityPill({ value, onChange }: { value: number; onChange: (v: number
 function TogglePill({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[11px] text-gray-400">{label}</span>
+      <span className="text-[11px] text-gray-500">{label}</span>
       <button
         onClick={() => onChange(!value)}
-        className={`relative w-8 h-4 rounded-full transition-colors duration-200 cursor-pointer flex-shrink-0 ${value ? 'bg-blue-500' : 'bg-[#444]'}`}
+        className={`relative w-8 h-4 rounded-full transition-colors duration-200 cursor-pointer flex-shrink-0 ${value ? 'bg-blue-500' : 'bg-gray-300'}`}
       >
         <div
           className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-200"
@@ -173,14 +181,12 @@ function HandleBtn({
       }}
       title={title}
     >
-      {/* Visual circle */}
       <div
-        className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors pointer-events-none"
-        style={{ background: '#2e2e2e', border: '1px solid rgba(255,255,255,0.12)' }}
+        className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors pointer-events-none"
+        style={{ background: CARD.handleBg, border: CARD.handleBorder }}
       >
         {icon}
       </div>
-      {/* Invisible handle on the outer edge of the circle */}
       <Handle
         type={type}
         position={position}
@@ -237,77 +243,61 @@ function ImageGenCard({
     { value: '4K', label: '4K' },
   ];
 
-  // Compute preview dimensions based on aspect ratio
-  const previewDimensions = getPreviewDimensions(aspectRatio, 394); // 420 - 2*13px padding
+  const previewDimensions = getPreviewDimensions(aspectRatio, 394);
 
   return (
     <div className="relative" style={{ padding: '0 24px' }}>
-      {/* Left sidebar handles */}
       <HandleBtn id="text-ref" type="target" position={Position.Left} icon={<MdTextFields size={18} />} title="Referência de texto" topOffset={80} />
       <HandleBtn id="image-ref" type="target" position={Position.Left} icon={<MdImage size={18} />} title="Imagem de referência" topOffset={124} />
-
-      {/* Right sidebar handles */}
       <HandleBtn id="output-ref" type="source" position={Position.Right} icon={<MdImage size={18} />} title="Usar como referência" topOffset={80} />
 
-      {/* Card body */}
       <div
         className="rounded-2xl overflow-hidden flex flex-col"
-        style={{
-          width: previewDimensions.cardWidth,
-          background: '#1e1e1e',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-        }}
+        style={{ width: previewDimensions.cardWidth, background: CARD.bg, border: CARD.border, boxShadow: CARD.shadow }}
       >
-        {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: CARD.divider }}>
           <MdImage size={18} className="text-gray-400" />
-          <span className="text-[13px] font-semibold text-white">Gerador de Imagem #{cardIndex}</span>
+          <span className="text-[13px] font-semibold text-gray-800">Gerador de Imagem #{cardIndex}</span>
         </div>
 
-        {/* Preview area — adapts to aspect ratio */}
         <div
           className="relative mx-3 mt-3 rounded-xl overflow-hidden flex items-center justify-center transition-all duration-300"
-          style={{ width: previewDimensions.width, height: previewDimensions.height, background: '#111', alignSelf: 'center' }}
+          style={{ width: previewDimensions.width, height: previewDimensions.height, background: CARD.previewBg, alignSelf: 'center' }}
         >
           {isGenerating ? (
             <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full border-2 border-gray-700 border-t-blue-400 animate-spin" />
-              <span className="text-[12px] text-gray-500">Gerando...</span>
+              <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-blue-400 animate-spin" />
+              <span className="text-[12px] text-gray-400">Gerando...</span>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 opacity-30">
-              <MdImage size={40} className="text-gray-600" />
-              <span className="text-[11px] text-gray-500">Prévia aparecerá aqui</span>
+            <div className="flex flex-col items-center gap-2 opacity-40">
+              <MdImage size={40} className="text-gray-300" />
+              <span className="text-[11px] text-gray-400">Prévia aparecerá aqui</span>
             </div>
           )}
         </div>
 
-        {/* Prompt input */}
         <div className="px-3 pt-3">
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Descreva a imagem que deseja gerar..."
             rows={2}
-            className="w-full bg-transparent text-[13px] resize-none outline-none placeholder-[#666]"
-            style={{ color: '#e0e0e0' }}
+            className="w-full bg-transparent text-[13px] text-gray-700 resize-none outline-none placeholder-gray-400"
           />
         </div>
 
-        {/* Controls row 1 */}
         <div className="px-3 pb-2 flex items-center gap-2 flex-wrap">
           <QuantityPill value={quantity} onChange={setQuantity} />
           <PillSelect value={model} onChange={setModel} options={modelOptions} />
           <PillSelect value={aspectRatio} onChange={setAspectRatio} options={aspectOptions} icon={<MdAspectRatio size={14} />} />
         </div>
 
-        {/* Controls row 2 + generate */}
-        <div className="px-3 py-2.5 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="px-3 py-2.5 flex items-center gap-2" style={{ borderTop: CARD.divider }}>
           <PillSelect value={quality} onChange={setQuality} options={qualityOptions} />
           <button
-            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-            style={{ background: '#333', border: '1px solid rgba(255,255,255,0.08)' }}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+            style={{ background: CARD.pillBg, border: CARD.pillBorder }}
             title="Configurações"
           >
             <MdSettings size={16} />
@@ -317,7 +307,7 @@ function ImageGenCard({
               onClick={onGenerate}
               disabled={isGenerating || data.comingSoon}
               className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              style={{ background: '#555', border: '1px solid rgba(255,255,255,0.1)' }}
+              style={{ background: 'linear-gradient(135deg, #00AFF0, #0099D4)', boxShadow: '0 2px 8px rgba(0,175,240,0.3)' }}
               title="Gerar"
             >
               <MdPlayArrow size={22} />
@@ -372,64 +362,50 @@ function VideoGenCard({
 
   return (
     <div className="relative" style={{ padding: '0 24px' }}>
-      {/* Left sidebar handles */}
       <HandleBtn id="text-ref" type="target" position={Position.Left} icon={<MdTextFields size={18} />} title="Referência de texto" topOffset={80} />
       <HandleBtn id="image-ref" type="target" position={Position.Left} icon={<MdImage size={18} />} title="Imagem de referência" topOffset={124} />
       <HandleBtn id="image-ref-2" type="target" position={Position.Left} icon={<MdImage size={18} />} title="Imagem de referência adicional" topOffset={168} />
-
-      {/* Right sidebar handles */}
       <HandleBtn id="keyframe-start" type="target" position={Position.Right} icon={<MdImage size={18} />} title="Keyframe inicial" topOffset={80} />
       <HandleBtn id="keyframe-end" type="target" position={Position.Right} icon={<MdImage size={18} />} title="Keyframe final" topOffset={124} />
       <HandleBtn id="video-ref" type="target" position={Position.Right} icon={<MdVideocam size={18} />} title="Referência de vídeo" topOffset={168} />
       <HandleBtn id="audio-ref" type="target" position={Position.Right} icon={<MdGraphicEq size={18} />} title="Referência de áudio" topOffset={212} />
 
-      {/* Card body */}
       <div
         className="rounded-2xl overflow-hidden flex flex-col"
-        style={{
-          width: previewDimensions.cardWidth,
-          background: '#1e1e1e',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-        }}
+        style={{ width: previewDimensions.cardWidth, background: CARD.bg, border: CARD.border, boxShadow: CARD.shadow }}
       >
-        {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: CARD.divider }}>
           <MdVideocam size={18} className="text-gray-400" />
-          <span className="text-[13px] font-semibold text-white">Gerador de Vídeo #{cardIndex}</span>
+          <span className="text-[13px] font-semibold text-gray-800">Gerador de Vídeo #{cardIndex}</span>
         </div>
 
-        {/* Preview area — adapts to aspect ratio */}
         <div
           className="relative mx-3 mt-3 rounded-xl overflow-hidden flex items-center justify-center transition-all duration-300"
-          style={{ width: previewDimensions.width, height: previewDimensions.height, background: '#111', alignSelf: 'center' }}
+          style={{ width: previewDimensions.width, height: previewDimensions.height, background: CARD.previewBg, alignSelf: 'center' }}
         >
           {isGenerating ? (
             <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full border-2 border-gray-700 border-t-orange-400 animate-spin" />
-              <span className="text-[12px] text-gray-500">Gerando...</span>
+              <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-orange-400 animate-spin" />
+              <span className="text-[12px] text-gray-400">Gerando...</span>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 opacity-30">
-              <MdVideocam size={40} className="text-gray-600" />
-              <span className="text-[11px] text-gray-500">Prévia aparecerá aqui</span>
+            <div className="flex flex-col items-center gap-2 opacity-40">
+              <MdVideocam size={40} className="text-gray-300" />
+              <span className="text-[11px] text-gray-400">Prévia aparecerá aqui</span>
             </div>
           )}
         </div>
 
-        {/* Prompt input */}
         <div className="px-3 pt-3">
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Descreva o vídeo que deseja gerar..."
             rows={2}
-            className="w-full bg-transparent text-[13px] resize-none outline-none placeholder-[#666]"
-            style={{ color: '#e0e0e0' }}
+            className="w-full bg-transparent text-[13px] text-gray-700 resize-none outline-none placeholder-gray-400"
           />
         </div>
 
-        {/* Controls row 1 */}
         <div className="px-3 pb-2 flex items-center gap-2 flex-wrap">
           <QuantityPill value={quantity} onChange={setQuantity} />
           <PillSelect value={model} onChange={setModel} options={modelOptions} />
@@ -437,8 +413,7 @@ function VideoGenCard({
           <PillSelect value={duration} onChange={setDuration} options={durationOptions} />
         </div>
 
-        {/* Controls row 2 + generate */}
-        <div className="px-3 py-2.5 flex items-center gap-2 flex-wrap" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="px-3 py-2.5 flex items-center gap-2 flex-wrap" style={{ borderTop: CARD.divider }}>
           <PillSelect value={resolution} onChange={setResolution} options={resolutionOptions} />
           <TogglePill label="Som" value={soundFx} onChange={setSoundFx} />
           <div className="ml-auto">
@@ -446,7 +421,7 @@ function VideoGenCard({
               onClick={onGenerate}
               disabled={isGenerating || data.comingSoon}
               className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              style={{ background: '#555', border: '1px solid rgba(255,255,255,0.1)' }}
+              style={{ background: 'linear-gradient(135deg, #00AFF0, #0099D4)', boxShadow: '0 2px 8px rgba(0,175,240,0.3)' }}
               title="Gerar"
             >
               <MdPlayArrow size={22} />
@@ -462,34 +437,29 @@ function VideoGenCard({
 function ModelRefCard({ data }: { data: GenerationCardNodeData }) {
   return (
     <div className="relative" style={{ padding: '0 24px' }}>
-      {/* Output handle on right */}
       <HandleBtn id="model-out" type="source" position={Position.Right} icon={<MdPerson size={16} />} title="Conectar modelo" topOffset={50} />
 
       <div
         className="w-[200px] rounded-2xl overflow-hidden flex flex-col"
-        style={{
-          background: '#1e1e1e',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-        }}
+        style={{ background: CARD.bg, border: CARD.border, boxShadow: CARD.shadow }}
       >
-        <div className="flex items-center gap-2 px-3 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center gap-2 px-3 py-2.5" style={{ borderBottom: CARD.divider }}>
           <MdPerson size={16} className="text-gray-400" />
-          <span className="text-[12px] font-semibold text-white">Modelo</span>
+          <span className="text-[12px] font-semibold text-gray-800">Modelo</span>
         </div>
-        <div className="mx-3 my-2.5 rounded-xl overflow-hidden" style={{ height: 100, background: '#111' }}>
+        <div className="mx-3 my-2.5 rounded-xl overflow-hidden" style={{ height: 100, background: CARD.previewBg }}>
           {data.modelAvatar ? (
             <img src={data.modelAvatar} alt="Modelo" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center opacity-30">
-              <MdPerson size={36} className="text-gray-500" />
+              <MdPerson size={36} className="text-gray-400" />
             </div>
           )}
         </div>
         <div className="px-3 pb-3">
           <div
-            className="w-full px-2.5 py-1.5 rounded-lg text-[12px] text-gray-300 truncate"
-            style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.06)' }}
+            className="w-full px-2.5 py-1.5 rounded-lg text-[12px] text-gray-600 truncate"
+            style={{ background: CARD.inputBg, border: CARD.inputBorder }}
           >
             {data.modelName || 'Selecionar modelo'}
           </div>
@@ -551,7 +521,6 @@ function LegacyCard({ data }: { data: GenerationCardNodeData }) {
 
   return (
     <div className="relative" style={{ padding: '0 24px' }}>
-      {/* Handles */}
       {data.hasTargetHandle && (
         <HandleBtn id="input" type="target" position={Position.Left} icon={TitleIcon === MdTextFields ? <MdTextFields size={16} /> : <MdImage size={16} />} title="Entrada" topOffset={40} />
       )}
@@ -561,15 +530,11 @@ function LegacyCard({ data }: { data: GenerationCardNodeData }) {
 
       <div
         className="w-[300px] rounded-2xl overflow-hidden"
-        style={{
-          background: '#1e1e1e',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-        }}
+        style={{ background: CARD.bg, border: CARD.border, boxShadow: CARD.shadow }}
       >
-        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: CARD.divider }}>
           <TitleIcon size={16} className="text-gray-400" />
-          <span className="text-[13px] font-semibold text-white">{data.title}</span>
+          <span className="text-[13px] font-semibold text-gray-800">{data.title}</span>
         </div>
         <div className="px-4 py-3 space-y-2.5">
           {data.fields?.map((field) => (
@@ -581,13 +546,13 @@ function LegacyCard({ data }: { data: GenerationCardNodeData }) {
                   onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
                   placeholder={field.placeholder}
                   rows={4}
-                  className="w-full text-[13px] px-3 py-2 rounded-lg resize-none outline-none placeholder-[#555]"
-                  style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.08)', color: '#e0e0e0' }}
+                  className="w-full text-[13px] text-gray-700 px-3 py-2 rounded-lg resize-none outline-none placeholder-gray-400"
+                  style={{ background: CARD.inputBg, border: CARD.inputBorder }}
                 />
               ) : field.type === 'upload' ? (
                 <div
                   className="w-full rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-6 cursor-pointer hover:opacity-80 transition-opacity"
-                  style={{ borderColor: 'rgba(255,255,255,0.12)', background: '#2a2a2a' }}
+                  style={{ borderColor: 'rgba(0,0,0,0.12)', background: CARD.inputBg }}
                   onClick={() => {
                     const input = document.createElement('input');
                     input.type = 'file';
@@ -607,8 +572,8 @@ function LegacyCard({ data }: { data: GenerationCardNodeData }) {
                     <img src={uploadPreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
                   ) : (
                     <>
-                      <MdImage size={28} className="text-gray-600" />
-                      <span className="text-[11px] text-gray-500">{field.placeholder || 'Upload'}</span>
+                      <MdImage size={28} className="text-gray-300" />
+                      <span className="text-[11px] text-gray-400">{field.placeholder || 'Upload'}</span>
                     </>
                   )}
                 </div>
@@ -618,8 +583,8 @@ function LegacyCard({ data }: { data: GenerationCardNodeData }) {
                   value={values[field.id] || ''}
                   onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
                   placeholder={field.placeholder}
-                  className="w-full text-[13px] px-3 py-1.5 rounded-lg outline-none placeholder-[#555]"
-                  style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.08)', color: '#e0e0e0' }}
+                  className="w-full text-[13px] text-gray-700 px-3 py-1.5 rounded-lg outline-none placeholder-gray-400"
+                  style={{ background: CARD.inputBg, border: CARD.inputBorder }}
                 />
               )}
             </div>

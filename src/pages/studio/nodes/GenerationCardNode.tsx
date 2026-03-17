@@ -456,7 +456,6 @@ function GenerationCardNodeInner({ data, id }: NodeProps) {
     category,
     hasSourceHandle,
     hasTargetHandle,
-    onGenerate,
     comingSoon,
   } = cardData;
 
@@ -473,7 +472,7 @@ function GenerationCardNodeInner({ data, id }: NodeProps) {
   const handleGenerate = () => {
     if (comingSoon) return;
     setIsGenerating(true);
-    onGenerate?.({});
+    cardData.onGenerate?.({});
     setTimeout(() => setIsGenerating(false), 2500);
   };
 
@@ -535,12 +534,10 @@ function GenerationCardNodeInner({ data, id }: NodeProps) {
 // ─── Legacy compact card for prompt/ref_image ────────────────────────
 function LegacyCard({
   data,
-  isGenerating,
-  onGenerate,
 }: {
   data: GenerationCardNodeData;
-  isGenerating: boolean;
-  onGenerate: () => void;
+  isGenerating?: boolean;
+  onGenerate?: () => void;
 }) {
   const [values, setValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};

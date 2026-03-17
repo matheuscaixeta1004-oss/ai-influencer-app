@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         console.log('[Auth] Event:', event);
 
-        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        if (event === 'SIGNED_OUT') {
           if (mounted) setState({ user: null, profile: null, session: null, loading: false });
           return;
         }

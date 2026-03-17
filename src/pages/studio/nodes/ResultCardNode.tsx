@@ -56,7 +56,7 @@ function ResultCardNodeInner({ data }: NodeProps) {
           className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full"
           style={{ background: `${cat.color}22`, border: `1px solid ${cat.color}44` }}
         >
-          <Icon size={10} style={{ color: cat.color }} />
+          <span style={{ color: cat.color, display: 'flex' }}><Icon size={10} /></span>
           <span className="text-[10px] font-semibold" style={{ color: cat.color }}>{cat.label}</span>
         </div>
       </div>

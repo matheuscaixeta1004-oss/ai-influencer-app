@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_RaQRZNQ5ncx5p0nKmpH8ONk6Ar9H",
+  "orgId": "team_htxOVDLKphJ98fdh1eDA4wlN",
+  "projectName": "ai-influencer-app",
+  "settings": {
+    "createdAt": 1773346422180,
+    "framework": "vite",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

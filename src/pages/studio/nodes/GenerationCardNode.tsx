@@ -171,7 +171,7 @@ function HandleBtn({
   const isLeft = position === Position.Left;
   return (
     <div
-      className="absolute"
+      className="nodrag nopan absolute"
       style={{
         top: topOffset,
         [isLeft ? 'left' : 'right']: -20,
@@ -188,11 +188,12 @@ function HandleBtn({
       >
         {icon}
       </div>
-      {/* Handle — full circle, above everything */}
+      {/* Handle — full circle, nodrag prevents card drag interference */}
       <Handle
         type={type}
         position={position}
         id={id}
+        className="nodrag nopan"
         style={{
           position: 'absolute',
           left: 0,

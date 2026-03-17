@@ -250,11 +250,23 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     setEdges((eds) => addEdge({ ...connection, ...defaultEdgeOptions }, eds));
   }, [setEdges, isValidConnection]);
 
+  // ── Track last pointer position (reliable, always available) ────────
+  const lastPointerRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => { lastPointerRef.current = { x: e.clientX, y: e.clientY }; };
+    const onTouch = (e: TouchEvent) => {
+      const t = e.touches[0] || e.changedTouches[0];
+      if (t) lastPointerRef.current = { x: t.clientX, y: t.clientY };
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onTouch);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('touchmove', onTouch); };
+  }, []);
+
   // ── Drag from handle → empty space → open menu & auto-connect ──────
   const pendingConnectionRef = useRef<{ nodeId: string; handleId: string; handleType: 'source' | 'target' } | null>(null);
 
   const onConnectStart = useCallback((_event: unknown, params: { nodeId: string | null; handleId: string | null; handleType: 'source' | 'target' | null }) => {
-    console.log('[Studio] onConnectStart', params);
     // Only track SOURCE (output) handles — inputs don't trigger drag-to-create
     if (params.nodeId && params.handleId && params.handleType === 'source') {
       pendingConnectionRef.current = {
@@ -269,7 +281,6 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onConnectEnd = useCallback((event: any) => {
-    console.log('[Studio] onConnectEnd fired', { pending: pendingConnectionRef.current, event, type: typeof event, keys: Object.keys(event || {}) });
     if (!pendingConnectionRef.current) return;
 
     // Check if dropped on a valid target handle
@@ -279,11 +290,8 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
       return;
     }
 
-    // Extract coordinates — defensive, try everything
-    const cx = event?.clientX ?? event?.nativeEvent?.clientX ?? event?.changedTouches?.[0]?.clientX ?? 0;
-    const cy = event?.clientY ?? event?.nativeEvent?.clientY ?? event?.changedTouches?.[0]?.clientY ?? 0;
-    console.log('[Studio] onConnectEnd coords', { cx, cy });
-
+    // Use last tracked pointer position (always reliable)
+    const { x: cx, y: cy } = lastPointerRef.current;
     if (!cx && !cy) { pendingConnectionRef.current = null; return; }
 
     const flowPos = screenToFlowPosition({ x: cx, y: cy });
@@ -309,7 +317,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   const handlePaneClick = useCallback((event: React.MouseEvent) => {
     // If there's a pending connection and no context menu open, open it
     if (pendingConnectionRef.current && !contextMenu) {
-      console.log('[Studio] paneClick fallback — opening menu from pending connection');
+      // Fallback: open menu from pending connection
       const flowPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       setContextMenuFlowPos(flowPos);
       setContextMenu({ x: event.clientX, y: event.clientY });

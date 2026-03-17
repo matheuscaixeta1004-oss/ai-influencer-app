@@ -1,6 +1,18 @@
-import { memo, useState, useRef } from 'react';
+import { memo, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import type { CardCategory, CardField } from '../types';
+import {
+  MdImage,
+  MdVideocam,
+  MdTextFields,
+  MdPlayArrow,
+  MdSettings,
+  MdAspectRatio,
+  MdGraphicEq,
+  MdAdd,
+  MdRemove,
+  MdPerson,
+} from 'react-icons/md';
+import type { CardCategory } from '../types';
 
 interface GenerationCardNodeData {
   category: CardCategory;
@@ -8,7 +20,7 @@ interface GenerationCardNodeData {
   description: string;
   icon: string;
   accentColor: string;
-  fields: CardField[];
+  fields: { id: string; label: string; type: string; options?: { value: string; label: string }[]; defaultValue: string; placeholder?: string }[];
   isLocked?: boolean;
   comingSoon?: boolean;
   modelAvatar?: string;
@@ -16,61 +28,465 @@ interface GenerationCardNodeData {
   hasSourceHandle?: boolean;
   hasTargetHandle?: boolean;
   onGenerate?: (params: Record<string, string>) => void;
+  cardIndex?: number;
   [key: string]: unknown;
 }
 
-function GenerationCardNodeInner({ data }: NodeProps) {
-  const {
-    title, description, icon, accentColor, fields,
-    isLocked, comingSoon, modelAvatar, modelName, onGenerate,
-    hasSourceHandle, hasTargetHandle,
-  } = data as unknown as GenerationCardNodeData;
+// ─── Reusable pill select ────────────────────────────────────────────
+function PillSelect({
+  value,
+  onChange,
+  options,
+  icon,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div
+      className="relative flex items-center gap-1 px-3 py-1.5 rounded-full cursor-pointer select-none"
+      style={{ background: '#333', border: '1px solid rgba(255,255,255,0.08)' }}
+    >
+      {icon && <span className="text-gray-400 flex-shrink-0">{icon}</span>}
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="bg-transparent text-white text-[12px] font-medium outline-none cursor-pointer appearance-none pr-3"
+        style={{ color: '#e0e0e0' }}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value} style={{ background: '#222', color: '#e0e0e0' }}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <svg className="w-3 h-3 text-gray-500 flex-shrink-0 pointer-events-none absolute right-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
+  );
+}
 
-  const [values, setValues] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
-    fields.forEach((f) => { initial[f.id] = f.defaultValue; });
-    return initial;
-  });
+// ─── Quantity control ────────────────────────────────────────────────
+function QuantityPill({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div
+      className="flex items-center gap-1 rounded-full px-2 py-1.5"
+      style={{ background: '#333', border: '1px solid rgba(255,255,255,0.08)' }}
+    >
+      <button
+        onClick={() => onChange(Math.max(1, value - 1))}
+        className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10"
+      >
+        <MdRemove size={14} />
+      </button>
+      <span className="text-[12px] font-semibold text-white w-5 text-center">x{value}</span>
+      <button
+        onClick={() => onChange(Math.min(4, value + 1))}
+        className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10"
+      >
+        <MdAdd size={14} />
+      </button>
+    </div>
+  );
+}
+
+// ─── Toggle pill ─────────────────────────────────────────────────────
+function TogglePill({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[11px] text-gray-400">{label}</span>
+      <button
+        onClick={() => onChange(!value)}
+        className={`relative w-8 h-4 rounded-full transition-colors duration-200 cursor-pointer flex-shrink-0 ${value ? 'bg-blue-500' : 'bg-[#444]'}`}
+      >
+        <div
+          className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-200"
+          style={{ transform: `translateX(${value ? '17px' : '2px'})` }}
+        />
+      </button>
+    </div>
+  );
+}
+
+// ─── Sidebar icon button ─────────────────────────────────────────────
+function SideBtn({ icon, title, onClick }: { icon: React.ReactNode; title: string; onClick?: () => void }) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors cursor-pointer"
+      style={{ background: '#2e2e2e', border: '1px solid rgba(255,255,255,0.08)' }}
+    >
+      {icon}
+    </button>
+  );
+}
+
+// ─── Image Generator Card ────────────────────────────────────────────
+function ImageGenCard({
+  data,
+  cardIndex,
+  isGenerating,
+  onGenerate,
+}: {
+  data: GenerationCardNodeData;
+  cardIndex: number;
+  isGenerating: boolean;
+  onGenerate: () => void;
+}) {
+  const [prompt, setPrompt] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [model, setModel] = useState('nano-banana-2');
+  const [aspectRatio, setAspectRatio] = useState('16:9');
+  const [quality, setQuality] = useState('1K');
+
+  const modelOptions = [
+    { value: 'nano-banana-2', label: 'Nano Banana 2' },
+    { value: 'seed-dream', label: 'Seed Dream' },
+    { value: 'ideogram-v3', label: 'Ideogram v3' },
+  ];
+  const aspectOptions = [
+    { value: '1:1', label: '1:1' },
+    { value: '4:5', label: '4:5' },
+    { value: '9:16', label: '9:16' },
+    { value: '16:9', label: '16:9' },
+  ];
+  const qualityOptions = [
+    { value: '1K', label: '1K' },
+    { value: '2K', label: '2K' },
+    { value: '4K', label: '4K' },
+  ];
+
+  return (
+    <div className="flex">
+      {/* Left sidebar */}
+      <div className="flex flex-col gap-2 pr-2 pt-10">
+        <SideBtn icon={<MdTextFields size={18} />} title="Referência de texto" />
+        <SideBtn icon={<MdImage size={18} />} title="Imagem de referência" />
+      </div>
+
+      {/* Card body */}
+      <div
+        className="w-[420px] rounded-2xl overflow-hidden flex flex-col"
+        style={{
+          background: '#1e1e1e',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        }}
+      >
+        {/* Title bar */}
+        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <MdImage size={18} className="text-gray-400" />
+          <span className="text-[13px] font-semibold text-white">Gerador de Imagem #{cardIndex}</span>
+          {data.comingSoon && (
+            <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(255,165,0,0.15)', color: '#FFA500' }}>
+              Em breve
+            </span>
+          )}
+        </div>
+
+        {/* Preview area */}
+        <div
+          className="relative mx-3 mt-3 rounded-xl overflow-hidden flex items-center justify-center"
+          style={{ height: 220, background: '#111' }}
+        >
+          {isGenerating ? (
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 rounded-full border-2 border-gray-700 border-t-blue-400 animate-spin" />
+              <span className="text-[12px] text-gray-500">Gerando...</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 opacity-30">
+              <MdImage size={40} className="text-gray-600" />
+              <span className="text-[11px] text-gray-500">Prévia aparecerá aqui</span>
+            </div>
+          )}
+        </div>
+
+        {/* Prompt input */}
+        <div className="px-3 pt-3">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Descreva a imagem que deseja gerar..."
+            rows={2}
+            className="w-full bg-transparent text-[13px] resize-none outline-none placeholder-[#666]"
+            style={{ color: '#e0e0e0' }}
+          />
+        </div>
+
+        {/* Controls row 1 */}
+        <div className="px-3 pb-2 flex items-center gap-2 flex-wrap">
+          <QuantityPill value={quantity} onChange={setQuantity} />
+          <PillSelect value={model} onChange={setModel} options={modelOptions} />
+          <PillSelect
+            value={aspectRatio}
+            onChange={setAspectRatio}
+            options={aspectOptions}
+            icon={<MdAspectRatio size={14} />}
+          />
+        </div>
+
+        {/* Controls row 2 + generate */}
+        <div
+          className="px-3 py-2.5 flex items-center gap-2"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <PillSelect value={quality} onChange={setQuality} options={qualityOptions} />
+          <button
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+            style={{ background: '#333', border: '1px solid rgba(255,255,255,0.08)' }}
+            title="Configurações"
+          >
+            <MdSettings size={16} />
+          </button>
+          <div className="ml-auto">
+            <button
+              onClick={onGenerate}
+              disabled={isGenerating || data.comingSoon}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              style={{ background: '#555', border: '1px solid rgba(255,255,255,0.1)' }}
+              title="Gerar"
+            >
+              <MdPlayArrow size={22} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Right sidebar */}
+      <div className="flex flex-col gap-2 pl-2 pt-10">
+        <SideBtn icon={<MdImage size={18} />} title="Usar como referência" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Video Generator Card ────────────────────────────────────────────
+function VideoGenCard({
+  data,
+  cardIndex,
+  isGenerating,
+  onGenerate,
+}: {
+  data: GenerationCardNodeData;
+  cardIndex: number;
+  isGenerating: boolean;
+  onGenerate: () => void;
+}) {
+  const [prompt, setPrompt] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [model, setModel] = useState('kling-3.0');
+  const [aspectRatio, setAspectRatio] = useState('16:9');
+  const [duration, setDuration] = useState('5s');
+  const [resolution, setResolution] = useState('1080p');
+  const [soundFx, setSoundFx] = useState(false);
+
+  const modelOptions = [
+    { value: 'kling-3.0', label: 'Kling 3.0' },
+    { value: 'kling-2.0', label: 'Kling 2.0' },
+  ];
+  const aspectOptions = [
+    { value: '1:1', label: '1:1' },
+    { value: '4:5', label: '4:5' },
+    { value: '9:16', label: '9:16' },
+    { value: '16:9', label: '16:9' },
+  ];
+  const durationOptions = [
+    { value: '5s', label: '5s' },
+    { value: '10s', label: '10s' },
+  ];
+  const resolutionOptions = [
+    { value: '720p', label: '720p' },
+    { value: '1080p', label: '1080p' },
+  ];
+
+  return (
+    <div className="flex">
+      {/* Left sidebar */}
+      <div className="flex flex-col gap-2 pr-2 pt-10">
+        <SideBtn icon={<MdTextFields size={18} />} title="Referência de texto" />
+        <SideBtn icon={<MdImage size={18} />} title="Imagem de referência" />
+        <SideBtn icon={<MdImage size={18} />} title="Imagem de referência adicional" />
+      </div>
+
+      {/* Card body */}
+      <div
+        className="w-[420px] rounded-2xl overflow-hidden flex flex-col"
+        style={{
+          background: '#1e1e1e',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        }}
+      >
+        {/* Title bar */}
+        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <MdVideocam size={18} className="text-gray-400" />
+          <span className="text-[13px] font-semibold text-white">Gerador de Vídeo #{cardIndex}</span>
+          {data.comingSoon && (
+            <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(255,165,0,0.15)', color: '#FFA500' }}>
+              Em breve
+            </span>
+          )}
+        </div>
+
+        {/* Preview area */}
+        <div
+          className="relative mx-3 mt-3 rounded-xl overflow-hidden flex items-center justify-center"
+          style={{ height: 220, background: '#111' }}
+        >
+          {isGenerating ? (
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 rounded-full border-2 border-gray-700 border-t-orange-400 animate-spin" />
+              <span className="text-[12px] text-gray-500">Gerando...</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 opacity-30">
+              <MdVideocam size={40} className="text-gray-600" />
+              <span className="text-[11px] text-gray-500">Prévia aparecerá aqui</span>
+            </div>
+          )}
+        </div>
+
+        {/* Prompt input */}
+        <div className="px-3 pt-3">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Descreva o vídeo que deseja gerar..."
+            rows={2}
+            className="w-full bg-transparent text-[13px] resize-none outline-none placeholder-[#666]"
+            style={{ color: '#e0e0e0' }}
+          />
+        </div>
+
+        {/* Controls row 1 */}
+        <div className="px-3 pb-2 flex items-center gap-2 flex-wrap">
+          <QuantityPill value={quantity} onChange={setQuantity} />
+          <PillSelect value={model} onChange={setModel} options={modelOptions} />
+          <PillSelect
+            value={aspectRatio}
+            onChange={setAspectRatio}
+            options={aspectOptions}
+            icon={<MdAspectRatio size={14} />}
+          />
+          <PillSelect value={duration} onChange={setDuration} options={durationOptions} />
+        </div>
+
+        {/* Controls row 2 + generate */}
+        <div
+          className="px-3 py-2.5 flex items-center gap-2 flex-wrap"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <PillSelect value={resolution} onChange={setResolution} options={resolutionOptions} />
+          <TogglePill label="Som" value={soundFx} onChange={setSoundFx} />
+          <div className="ml-auto">
+            <button
+              onClick={onGenerate}
+              disabled={isGenerating || data.comingSoon}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              style={{ background: '#555', border: '1px solid rgba(255,255,255,0.1)' }}
+              title="Gerar"
+            >
+              <MdPlayArrow size={22} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Right sidebar */}
+      <div className="flex flex-col gap-2 pl-2 pt-10">
+        <SideBtn icon={<MdImage size={18} />} title="Keyframe inicial" />
+        <SideBtn icon={<MdImage size={18} />} title="Keyframe final" />
+        <SideBtn icon={<MdVideocam size={18} />} title="Referência de vídeo" />
+        <SideBtn icon={<MdGraphicEq size={18} />} title="Referência de áudio" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Model Ref Card (small) ──────────────────────────────────────────
+function ModelRefCard({ data }: { data: GenerationCardNodeData }) {
+  return (
+    <div
+      className="w-[200px] rounded-2xl overflow-hidden flex flex-col"
+      style={{
+        background: '#1e1e1e',
+        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      }}
+    >
+      {/* Title */}
+      <div className="flex items-center gap-2 px-3 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <MdPerson size={16} className="text-gray-400" />
+        <span className="text-[12px] font-semibold text-white">Modelo</span>
+      </div>
+
+      {/* Avatar */}
+      <div className="mx-3 my-2.5 rounded-xl overflow-hidden" style={{ height: 100, background: '#111' }}>
+        {data.modelAvatar ? (
+          <img src={data.modelAvatar} alt="Modelo" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center opacity-30">
+            <MdPerson size={36} className="text-gray-500" />
+          </div>
+        )}
+      </div>
+
+      {/* Model name */}
+      <div className="px-3 pb-3">
+        <div
+          className="w-full px-2.5 py-1.5 rounded-lg text-[12px] text-gray-300 truncate"
+          style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          {data.modelName || 'Selecionar modelo'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────────
+function GenerationCardNodeInner({ data, id }: NodeProps) {
+  const cardData = data as unknown as GenerationCardNodeData;
+  const {
+    category,
+    hasSourceHandle,
+    hasTargetHandle,
+    onGenerate,
+    comingSoon,
+  } = cardData;
+
   const [isGenerating, setIsGenerating] = useState(false);
-  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Extract card index from node id (e.g. card-image_gen-1234-2 → index from cardCounter)
+  const cardIndex = (() => {
+    const parts = id.split('-');
+    const last = parts[parts.length - 1];
+    const num = parseInt(last, 10);
+    return isNaN(num) ? 1 : num + 1;
+  })();
 
   const handleGenerate = () => {
-    if (isLocked || comingSoon) return;
+    if (comingSoon) return;
     setIsGenerating(true);
-    onGenerate?.(values);
+    onGenerate?.({});
     setTimeout(() => setIsGenerating(false), 2500);
   };
 
-  const handleFileUpload = (fieldId: string, file: File) => {
-    const url = URL.createObjectURL(file);
-    setUploadPreview(url);
-    setValues((v) => ({ ...v, [fieldId]: url }));
-  };
-
-  const locked = isLocked || comingSoon;
-
-  // Handle style shared
   const handleStyle = {
     width: 10,
     height: 10,
-    background: '#fff',
-    border: `2px solid ${accentColor}`,
+    background: '#555',
+    border: '2px solid rgba(255,255,255,0.3)',
     borderRadius: '50%',
   };
 
   return (
-    <div
-      className={`
-        w-[300px] rounded-2xl bg-white overflow-visible select-none
-        transition-shadow duration-200
-        ${locked ? 'opacity-75' : 'hover:shadow-xl'}
-      `}
-      style={{
-        border: `1px solid ${locked ? '#E5E7EB' : accentColor}20`,
-        boxShadow: `0 1px 3px rgba(0,0,0,0.06), 0 8px 24px ${accentColor}08`,
-      }}
-    >
+    <div className="relative select-none" style={{ overflow: 'visible' }}>
       {/* Target handle (left side — input) */}
       {hasTargetHandle && (
         <Handle
@@ -89,103 +505,113 @@ function GenerationCardNodeInner({ data }: NodeProps) {
         />
       )}
 
-      {/* Header */}
-      <div
-        className="px-4 py-3 flex items-center gap-3"
-        style={{ background: `linear-gradient(135deg, ${accentColor}08, ${accentColor}15)` }}
-      >
-        <span className="text-2xl">{icon}</span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-gray-900 truncate">{title}</h3>
-            {comingSoon && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-600 whitespace-nowrap">
-                Em breve
-              </span>
-            )}
-            {isLocked && !comingSoon && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-500 whitespace-nowrap">
-                🔒 Premium
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-gray-500 leading-tight mt-0.5">{description}</p>
-        </div>
-      </div>
-
-      {/* Model badge */}
-      {modelName && (
-        <div className="px-4 py-2 flex items-center gap-2 bg-gray-50/50 border-b border-gray-100">
-          <div
-            className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-[10px] font-bold text-white overflow-hidden flex-shrink-0"
-            style={modelAvatar ? {} : { background: accentColor }}
-          >
-            {modelAvatar
-              ? <img src={modelAvatar} alt="" className="w-full h-full object-cover" />
-              : modelName[0]?.toUpperCase()
-            }
-          </div>
-          <span className="text-[12px] text-gray-600 font-medium truncate">{modelName}</span>
-          <span className="ml-auto text-[10px] text-gray-400">Modelo vinculado</span>
-        </div>
+      {/* Render the appropriate card type */}
+      {category === 'image_gen' && (
+        <ImageGenCard
+          data={cardData}
+          cardIndex={cardIndex}
+          isGenerating={isGenerating}
+          onGenerate={handleGenerate}
+        />
       )}
+      {category === 'video_gen' && (
+        <VideoGenCard
+          data={cardData}
+          cardIndex={cardIndex}
+          isGenerating={isGenerating}
+          onGenerate={handleGenerate}
+        />
+      )}
+      {category === 'model_ref' && (
+        <ModelRefCard data={cardData} />
+      )}
+      {(category === 'prompt' || category === 'ref_image') && (
+        <LegacyCard data={cardData} isGenerating={isGenerating} onGenerate={handleGenerate} />
+      )}
+    </div>
+  );
+}
+
+// ─── Legacy compact card for prompt/ref_image ────────────────────────
+function LegacyCard({
+  data,
+  isGenerating,
+  onGenerate,
+}: {
+  data: GenerationCardNodeData;
+  isGenerating: boolean;
+  onGenerate: () => void;
+}) {
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    data.fields?.forEach((f) => { init[f.id] = f.defaultValue || ''; });
+    return init;
+  });
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+
+  const TitleIcon = data.category === 'prompt' ? MdTextFields : MdImage;
+
+  return (
+    <div
+      className="w-[300px] rounded-2xl overflow-hidden"
+      style={{
+        background: '#1e1e1e',
+        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      }}
+    >
+      {/* Title bar */}
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <TitleIcon size={16} className="text-gray-400" />
+        <span className="text-[13px] font-semibold text-white">{data.title}</span>
+        {data.comingSoon && (
+          <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(255,165,0,0.15)', color: '#FFA500' }}>
+            Em breve
+          </span>
+        )}
+      </div>
 
       {/* Fields */}
       <div className="px-4 py-3 space-y-2.5">
-        {fields.map((field) => (
+        {data.fields?.map((field) => (
           <div key={field.id}>
             <label className="block text-[11px] font-medium text-gray-500 mb-1">{field.label}</label>
-            {field.type === 'select' ? (
-              <select
-                value={values[field.id] || ''}
-                onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
-                disabled={locked}
-                className="w-full text-[13px] px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-800
-                  focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-                  disabled:bg-gray-50 disabled:text-gray-400 transition-colors"
-              >
-                {field.options?.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            ) : field.type === 'textarea' ? (
+            {field.type === 'textarea' ? (
               <textarea
                 value={values[field.id] || ''}
                 onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
                 placeholder={field.placeholder}
-                disabled={locked}
-                rows={3}
-                className="w-full text-[13px] px-3 py-2 rounded-lg border border-gray-200 resize-none
-                  focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-                  disabled:bg-gray-50 disabled:text-gray-400 placeholder-gray-300 transition-colors"
+                rows={4}
+                className="w-full text-[13px] px-3 py-2 rounded-lg resize-none outline-none placeholder-[#555]"
+                style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.08)', color: '#e0e0e0' }}
               />
             ) : field.type === 'upload' ? (
               <div
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50
-                  hover:border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer
-                  flex flex-col items-center justify-center gap-1 py-4"
+                className="w-full rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-6 cursor-pointer hover:opacity-80 transition-opacity"
+                style={{ borderColor: 'rgba(255,255,255,0.12)', background: '#2a2a2a' }}
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      const url = URL.createObjectURL(file);
+                      setUploadPreview(url);
+                      setValues((v) => ({ ...v, [field.id]: url }));
+                    }
+                  };
+                  input.click();
+                }}
               >
                 {uploadPreview ? (
                   <img src={uploadPreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
                 ) : (
                   <>
-                    <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                    </svg>
-                    <span className="text-[11px] text-gray-400">{field.placeholder || 'Upload'}</span>
+                    <MdImage size={28} className="text-gray-600" />
+                    <span className="text-[11px] text-gray-500">{field.placeholder || 'Upload'}</span>
                   </>
                 )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFileUpload(field.id, file);
-                  }}
-                />
               </div>
             ) : (
               <input
@@ -193,50 +619,13 @@ function GenerationCardNodeInner({ data }: NodeProps) {
                 value={values[field.id] || ''}
                 onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
                 placeholder={field.placeholder}
-                disabled={locked}
-                className="w-full text-[13px] px-3 py-1.5 rounded-lg border border-gray-200
-                  focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-                  disabled:bg-gray-50 disabled:text-gray-400 placeholder-gray-300 transition-colors"
+                className="w-full text-[13px] px-3 py-1.5 rounded-lg outline-none placeholder-[#555]"
+                style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.08)', color: '#e0e0e0' }}
               />
             )}
           </div>
         ))}
       </div>
-
-      {/* Generate button — only show for generation cards */}
-      {(data as unknown as GenerationCardNodeData).category !== 'prompt' &&
-       (data as unknown as GenerationCardNodeData).category !== 'ref_image' && (
-        <div className="px-4 pb-4 pt-1">
-          <button
-            onClick={handleGenerate}
-            disabled={locked || isGenerating}
-            className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white
-              transition-all duration-200 cursor-pointer
-              disabled:opacity-50 disabled:cursor-not-allowed
-              active:scale-[0.98]"
-            style={{
-              background: locked
-                ? '#D1D5DB'
-                : `linear-gradient(135deg, ${accentColor}, ${accentColor}DD)`,
-              boxShadow: locked ? 'none' : `0 2px 8px ${accentColor}40`,
-            }}
-          >
-            {isGenerating ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Gerando...
-              </span>
-            ) : locked ? (
-              comingSoon ? '🚧 Em breve' : '🔒 Desbloquear Premium'
-            ) : (
-              '✨ Gerar'
-            )}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

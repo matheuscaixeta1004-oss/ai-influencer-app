@@ -15,6 +15,7 @@ import {
   addEdge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { MdAutoFixHigh, MdAdd, MdPerson } from 'react-icons/md';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserModels, getModelPhotos } from '../../lib/models';
@@ -44,10 +45,10 @@ const nodeTypes: NodeTypes = {
   resultCard: ResultCardNode,
 };
 
-// Default edge style — soft bezier, light gray
+// Default edge style — soft bezier, dark gray
 const defaultEdgeOptions = {
   type: 'default',
-  style: { stroke: '#B0B8C4', strokeWidth: 2 },
+  style: { stroke: '#444', strokeWidth: 2 },
   animated: false,
 };
 
@@ -92,7 +93,7 @@ function StudioCanvas() {
     });
   }, [selectedModel]);
 
-  // ── Helper: rebuild nodes from refs (spawned + results) with up-to-date data ──
+  // ── Helper: rebuild nodes from refs ──────────────────────────────────
   const rebuildNodes = useCallback(() => {
     const updatedSpawned = spawnedCardsRef.current.map((card) => {
       const tmplIdx = MENU_TO_TEMPLATE[String(card.data.category)] ?? 0;
@@ -155,20 +156,19 @@ function StudioCanvas() {
     rebuildNodes();
   }, [rebuildNodes]);
 
-  // ── Handle node deletion — remove from refs so they don't come back ──
+  // ── Handle node deletion ──────────────────────────────────────────────
   const handleNodesDelete: OnNodesDelete = useCallback((deletedNodes) => {
     const deletedIds = new Set(deletedNodes.map((n) => n.id));
     spawnedCardsRef.current = spawnedCardsRef.current.filter((c) => !deletedIds.has(c.id));
     resultsRef.current = resultsRef.current.filter((r) => !deletedIds.has(r.id));
-    // nodes state is already updated by ReactFlow's onNodesChange
   }, []);
 
-  // ── Handle edge connections ──
+  // ── Handle edge connections ──────────────────────────────────────────
   const onConnect: OnConnect = useCallback((connection) => {
     setEdges((eds) => addEdge({ ...connection, ...defaultEdgeOptions }, eds));
   }, [setEdges]);
 
-  // Handle context menu open (right-click on canvas)
+  // Handle context menu open
   const handleContextMenu = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
     const flowPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
@@ -176,7 +176,6 @@ function StudioCanvas() {
     setContextMenu({ x: event.clientX, y: event.clientY });
   }, [screenToFlowPosition]);
 
-  // Close context menu (called from pane click + ContextMenu's own outside-click)
   const closeContextMenu = useCallback(() => {
     setContextMenu(null);
   }, []);
@@ -198,12 +197,12 @@ function StudioCanvas() {
         modelAvatar: primaryPhoto?.url || undefined,
         modelName: selectedModel?.name || (models.length === 0 ? 'Crie um modelo primeiro' : 'Selecionar modelo'),
         onGenerate: (params: Record<string, string>) => handleGenerate(tmpl.category as CardCategory, params),
+        cardIndex: cardCounter + 1,
       },
       draggable: true,
       style: { zIndex: 1 },
     };
 
-    // Append to ref (source of truth) and rebuild
     spawnedCardsRef.current = [...spawnedCardsRef.current, newCard];
     setCardCounter((c) => c + 1);
     rebuildNodes();
@@ -225,23 +224,25 @@ function StudioCanvas() {
       {/* Model selector (bottom-left) */}
       {models.length > 1 && (
         <div
-          className="absolute bottom-4 left-4 z-10 px-3 py-2 rounded-xl bg-white/90 backdrop-blur-md"
+          className="absolute bottom-4 left-4 z-10 px-3 py-2 rounded-xl"
           style={{
-            border: '1px solid rgba(0,0,0,0.06)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
+            background: '#1e1e1e',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
           }}
         >
-          <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Modelo ativo</label>
+          <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Modelo ativo</label>
           <select
             value={selectedModel?.id || ''}
             onChange={(e) => {
               const m = models.find((mod) => mod.id === e.target.value);
               if (m) setSelectedModel(m);
             }}
-            className="block mt-1 text-[13px] font-medium text-gray-800 bg-transparent border-none outline-none cursor-pointer"
+            className="block mt-1 text-[13px] font-medium bg-transparent border-none outline-none cursor-pointer"
+            style={{ color: '#e0e0e0' }}
           >
             {models.map((m) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
+              <option key={m.id} value={m.id} style={{ background: '#222' }}>{m.name}</option>
             ))}
           </select>
         </div>
@@ -251,11 +252,14 @@ function StudioCanvas() {
       {models.length === 0 && (
         <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
           <div className="text-center pointer-events-auto">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <span className="text-3xl">✨</span>
+            <div
+              className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+              style={{ background: 'rgba(0,175,240,0.1)', border: '1px solid rgba(0,175,240,0.2)' }}
+            >
+              <MdPerson size={32} style={{ color: '#00AFF0' }} />
             </div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-1">Crie seu primeiro modelo</h2>
-            <p className="text-[13px] text-gray-500 mb-4 max-w-sm">
+            <h2 className="text-lg font-semibold mb-1" style={{ color: '#e0e0e0' }}>Crie seu primeiro modelo</h2>
+            <p className="text-[13px] mb-4 max-w-sm" style={{ color: '#666' }}>
               Para usar o Studio, primeiro crie uma modelo virtual no wizard.
             </p>
             <a
@@ -266,9 +270,7 @@ function StudioCanvas() {
                 boxShadow: '0 2px 8px rgba(0,175,240,0.3)',
               }}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
+              <MdAdd size={16} />
               Criar Modelo
             </a>
           </div>
@@ -279,13 +281,14 @@ function StudioCanvas() {
       {models.length > 0 && spawnedCardsRef.current.length === 0 && resultsRef.current.length === 0 && (
         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
           <div className="text-center">
-            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gray-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
-              </svg>
+            <div
+              className="w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <MdAutoFixHigh size={24} style={{ color: 'rgba(255,255,255,0.3)' }} />
             </div>
-            <p className="text-[14px] font-medium text-gray-400 mb-1">Clique com botão direito</p>
-            <p className="text-[12px] text-gray-300">para adicionar cards ao canvas</p>
+            <p className="text-[14px] font-medium mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>Clique com botão direito</p>
+            <p className="text-[12px]" style={{ color: 'rgba(255,255,255,0.2)' }}>para adicionar cards ao canvas</p>
           </div>
         </div>
       )}
@@ -307,8 +310,14 @@ function StudioCanvas() {
         className="studio-canvas"
         onContextMenu={handleContextMenu}
         onPaneClick={closeContextMenu}
+        style={{ background: '#121212' }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#B8D4E8" />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={28}
+          size={1}
+          color="rgba(255,255,255,0.08)"
+        />
       </ReactFlow>
 
       {/* Context Menu */}
@@ -326,35 +335,52 @@ function StudioCanvas() {
 
 export function Studio() {
   return (
-    <div className="fixed inset-0 ml-[244px] bg-[#FAFAFA]" style={{ fontFamily: "'Geist', sans-serif" }}>
-      {/* Studio header */}
+    <div className="fixed inset-0 ml-[244px]" style={{ background: '#121212', fontFamily: "'Geist', sans-serif" }}>
+      {/* Studio header — dark theme */}
       <div
-        className="absolute top-0 left-0 right-0 h-14 z-20 flex items-center px-6 bg-white/80 backdrop-blur-md"
-        style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+        className="absolute top-0 left-0 right-0 h-14 z-20 flex items-center px-6"
+        style={{
+          background: 'rgba(18,18,18,0.9)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}
       >
         <div className="flex items-center gap-3">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg, #00BFF5 0%, #0099D4 100%)' }}
           >
-            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
+            <MdAutoFixHigh size={16} style={{ color: 'white' }} />
           </div>
           <div>
-            <h1 className="text-[15px] font-semibold text-gray-900">Studio</h1>
-            <p className="text-[11px] text-gray-400 -mt-0.5">Crie conteúdo visual para suas modelos</p>
+            <h1 className="text-[15px] font-semibold" style={{ color: '#e0e0e0' }}>Studio</h1>
+            <p className="text-[11px] -mt-0.5" style={{ color: '#555' }}>Crie conteúdo visual para suas modelos</p>
           </div>
         </div>
 
         {/* Keyboard shortcuts hint */}
         <div className="ml-auto flex items-center gap-4">
-          <div className="flex items-center gap-2 text-[11px] text-gray-400">
-            <kbd className="px-1.5 py-0.5 rounded bg-gray-100 text-[10px] font-mono">Right-click</kbd>
+          <div className="flex items-center gap-2 text-[11px]" style={{ color: '#444' }}>
+            <kbd
+              className="px-1.5 py-0.5 rounded text-[10px] font-mono"
+              style={{ background: 'rgba(255,255,255,0.06)', color: '#666', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              Right-click
+            </kbd>
             <span>novo card</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-gray-100 text-[10px] font-mono">Scroll</kbd>
+            <kbd
+              className="px-1.5 py-0.5 rounded text-[10px] font-mono"
+              style={{ background: 'rgba(255,255,255,0.06)', color: '#666', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              Scroll
+            </kbd>
             <span>zoom</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-gray-100 text-[10px] font-mono">Drag</kbd>
+            <kbd
+              className="px-1.5 py-0.5 rounded text-[10px] font-mono"
+              style={{ background: 'rgba(255,255,255,0.06)', color: '#666', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              Drag
+            </kbd>
             <span>mover</span>
           </div>
         </div>

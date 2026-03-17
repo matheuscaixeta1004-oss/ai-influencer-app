@@ -1,4 +1,4 @@
-export type CardCategory = 'image_gen' | 'video_gen' | 'prompt' | 'ref_image';
+export type CardCategory = 'image_gen' | 'video_gen' | 'prompt' | 'ref_image' | 'model_ref';
 
 export interface CardField {
   id: string;

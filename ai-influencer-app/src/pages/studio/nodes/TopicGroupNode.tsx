@@ -10,19 +10,19 @@ interface TopicGroupNodeData {
 }
 
 function TopicGroupNodeInner({ data }: NodeProps) {
-  const { label, color, width, height } = data as unknown as TopicGroupNodeData;
+  const { label, width, height } = data as unknown as TopicGroupNodeData;
   return (
     <div
       className="rounded-2xl border-2 border-dashed"
       style={{
         width,
         height,
-        backgroundColor: color,
-        borderColor: `${color === '#EFF6FF' ? '#93C5FD' : color === '#FFF7ED' ? '#FDBA74' : '#FCA5A5'}`,
+        background: 'rgba(255,255,255,0.02)',
+        borderColor: 'rgba(255,255,255,0.08)',
       }}
     >
       <div className="px-5 py-3 flex items-center gap-2">
-        <span className="text-sm font-semibold text-gray-700 select-none">{label}</span>
+        <span className="text-sm font-semibold select-none" style={{ color: 'rgba(255,255,255,0.35)' }}>{label}</span>
       </div>
     </div>
   );

@@ -6,14 +6,14 @@ const sceneField: CardField = {
   label: 'Cenário',
   type: 'select',
   options: [
-    { value: 'beach', label: '🏖️ Praia' },
-    { value: 'restaurant', label: '🍽️ Restaurante' },
-    { value: 'gym', label: '🏋️ Academia' },
-    { value: 'home', label: '🏠 Casa' },
-    { value: 'city', label: '🏙️ Cidade' },
-    { value: 'nature', label: '🌿 Natureza' },
-    { value: 'studio', label: '📸 Estúdio' },
-    { value: 'pool', label: '🏊 Piscina' },
+    { value: 'beach', label: 'Praia' },
+    { value: 'restaurant', label: 'Restaurante' },
+    { value: 'gym', label: 'Academia' },
+    { value: 'home', label: 'Casa' },
+    { value: 'city', label: 'Cidade' },
+    { value: 'nature', label: 'Natureza' },
+    { value: 'studio', label: 'Estúdio' },
+    { value: 'pool', label: 'Piscina' },
   ],
   defaultValue: 'beach',
 };
@@ -23,12 +23,12 @@ const outfitField: CardField = {
   label: 'Roupa',
   type: 'select',
   options: [
-    { value: 'casual', label: '👕 Casual' },
-    { value: 'elegant', label: '👗 Elegante' },
-    { value: 'fitness', label: '🏃 Fitness' },
-    { value: 'bikini', label: '👙 Biquíni' },
-    { value: 'streetwear', label: '🧢 Streetwear' },
-    { value: 'lingerie', label: '🩱 Lingerie' },
+    { value: 'casual', label: 'Casual' },
+    { value: 'elegant', label: 'Elegante' },
+    { value: 'fitness', label: 'Fitness' },
+    { value: 'bikini', label: 'Biquíni' },
+    { value: 'streetwear', label: 'Streetwear' },
+    { value: 'lingerie', label: 'Lingerie' },
   ],
   defaultValue: 'casual',
 };
@@ -38,11 +38,11 @@ const poseField: CardField = {
   label: 'Pose',
   type: 'select',
   options: [
-    { value: 'standing', label: '🧍 Em pé' },
-    { value: 'sitting', label: '🪑 Sentada' },
-    { value: 'walking', label: '🚶 Andando' },
-    { value: 'posing', label: '💃 Posando' },
-    { value: 'candid', label: '📷 Espontânea' },
+    { value: 'standing', label: 'Em pé' },
+    { value: 'sitting', label: 'Sentada' },
+    { value: 'walking', label: 'Andando' },
+    { value: 'posing', label: 'Posando' },
+    { value: 'candid', label: 'Espontânea' },
   ],
   defaultValue: 'posing',
 };
@@ -59,12 +59,12 @@ const detailField: CardField = {
 export const CARD_TEMPLATES: Omit<GenerationCardData, 'modelAvatar' | 'modelName' | 'onGenerate'>[] = [
   {
     category: 'image_gen',
-    title: 'Geração de Imagem',
-    description: 'Gera imagem a partir de prompt + imagem de referência.',
-    icon: '🖼️',
+    title: 'Gerador de Imagem',
+    description: 'Gera imagem a partir de prompt + referência.',
+    icon: 'image',
     accentColor: '#00AFF0',
     prePrompt: '{prompt}',
-    aspectRatio: '4:5',
+    aspectRatio: '16:9',
     fields: [
       sceneField,
       outfitField,
@@ -76,22 +76,22 @@ export const CARD_TEMPLATES: Omit<GenerationCardData, 'modelAvatar' | 'modelName
   },
   {
     category: 'video_gen',
-    title: 'Geração de Vídeo',
+    title: 'Gerador de Vídeo',
     description: 'Gera vídeo com Motion Control a partir de prompt + ref.',
-    icon: '🎬',
+    icon: 'video',
     accentColor: '#FF6D00',
     prePrompt: '{prompt}',
-    aspectRatio: '9:16',
+    aspectRatio: '16:9',
     fields: [
       {
         id: 'style',
         label: 'Estilo',
         type: 'select',
         options: [
-          { value: 'dance', label: '💃 Dancinha' },
-          { value: 'transition', label: '✨ Transição' },
-          { value: 'lipsync', label: '🎤 Lip Sync' },
-          { value: 'grwm', label: '💄 GRWM' },
+          { value: 'dance', label: 'Dancinha' },
+          { value: 'transition', label: 'Transição' },
+          { value: 'lipsync', label: 'Lip Sync' },
+          { value: 'grwm', label: 'GRWM' },
         ],
         defaultValue: 'dance',
       },
@@ -104,7 +104,7 @@ export const CARD_TEMPLATES: Omit<GenerationCardData, 'modelAvatar' | 'modelName
     category: 'prompt',
     title: 'Prompt',
     description: 'Escreva o prompt de texto para a geração.',
-    icon: '✏️',
+    icon: 'text',
     accentColor: '#7C3AED',
     prePrompt: '',
     aspectRatio: '',
@@ -124,7 +124,7 @@ export const CARD_TEMPLATES: Omit<GenerationCardData, 'modelAvatar' | 'modelName
     category: 'ref_image',
     title: 'Imagem de Referência',
     description: 'Upload da imagem de referência para a geração.',
-    icon: '🖼️',
+    icon: 'image',
     accentColor: '#10B981',
     prePrompt: '',
     aspectRatio: '',
@@ -140,6 +140,18 @@ export const CARD_TEMPLATES: Omit<GenerationCardData, 'modelAvatar' | 'modelName
     hasTargetHandle: false,
     hasSourceHandle: true,
   },
+  {
+    category: 'model_ref',
+    title: 'Modelo',
+    description: 'Referência de modelo de IA para geração.',
+    icon: 'person',
+    accentColor: '#E040FB',
+    prePrompt: '',
+    aspectRatio: '',
+    fields: [],
+    hasTargetHandle: false,
+    hasSourceHandle: true,
+  },
 ];
 
 // ── Map context menu IDs to template indices ──────────────────────────
@@ -148,13 +160,14 @@ export const MENU_TO_TEMPLATE: Record<string, number> = {
   video_gen: 1,
   prompt: 2,
   ref_image: 3,
+  model_ref: 4,
 };
 
 // ── Default canvas layout ─────────────────────────────────────────────
 export const DEFAULT_TOPIC_GROUPS = [
-  { id: 'topic-social', label: '📱 Social Media', color: '#EFF6FF', x: 0, y: 0, width: 720, height: 520 },
-  { id: 'topic-video', label: '🎬 Vídeo', color: '#FFF7ED', x: 780, y: 0, width: 360, height: 520 },
-  { id: 'topic-premium', label: '🔥 Premium', color: '#FEF2F2', x: 0, y: 580, width: 720, height: 520 },
+  { id: 'topic-social', label: 'Social Media', color: '#1a1a2e', x: 0, y: 0, width: 720, height: 520 },
+  { id: 'topic-video', label: 'Vídeo', color: '#1a1a1a', x: 780, y: 0, width: 360, height: 520 },
+  { id: 'topic-premium', label: 'Premium', color: '#1e1a1a', x: 0, y: 580, width: 720, height: 520 },
 ];
 
 export const DEFAULT_CARD_POSITIONS = [

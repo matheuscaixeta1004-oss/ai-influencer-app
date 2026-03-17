@@ -61,7 +61,7 @@ const defaultEdgeOptions = {
 
 function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: StudioProject | null; onProjectSaved?: () => void }) {
   const { user } = useAuth();
-  const { zoomIn, zoomOut, fitView, screenToFlowPosition, getViewport } = useReactFlow();
+  const { zoomIn, zoomOut, fitView, screenToFlowPosition, getViewport, getNodes: rfGetNodes } = useReactFlow();
 
   const [models, setModels] = useState<AIModel[]>([]);
   const [primaryPhoto, setPrimaryPhoto] = useState<ModelPhoto | null>(null);
@@ -258,14 +258,20 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   // ── Track last pointer position (reliable, always available) ────────
   const lastPointerRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   useEffect(() => {
+    const onPointer = (e: PointerEvent) => { lastPointerRef.current = { x: e.clientX, y: e.clientY }; };
     const onMove = (e: MouseEvent) => { lastPointerRef.current = { x: e.clientX, y: e.clientY }; };
     const onTouch = (e: TouchEvent) => {
       const t = e.touches[0] || e.changedTouches[0];
       if (t) lastPointerRef.current = { x: t.clientX, y: t.clientY };
     };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('touchmove', onTouch);
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('touchmove', onTouch); };
+    window.addEventListener('pointermove', onPointer, { capture: true });
+    window.addEventListener('mousemove', onMove, { capture: true });
+    window.addEventListener('touchmove', onTouch, { capture: true });
+    return () => {
+      window.removeEventListener('pointermove', onPointer, { capture: true });
+      window.removeEventListener('mousemove', onMove, { capture: true });
+      window.removeEventListener('touchmove', onTouch, { capture: true });
+    };
   }, []);
 
   // ── Drag from handle → empty space → open menu & auto-connect ──────
@@ -284,26 +290,63 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     }
   }, []);
 
+  // ── Handle map: which target handles exist per card category ────────
+  const CARD_TARGET_HANDLES: Record<string, string[]> = {
+    image_gen: ['text-ref', 'image-ref'],
+    video_gen: ['text-ref', 'image-ref', 'image-ref-2', 'keyframe-start', 'keyframe-end', 'video-ref', 'audio-ref'],
+    model_ref: [],
+    prompt: [],
+    ref_image: [],
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onConnectEnd = useCallback((event: any) => {
-    if (!pendingConnectionRef.current) return;
+    const pending = pendingConnectionRef.current;
+    if (!pending) return;
 
-    // Check if dropped on a valid target handle
+    // If dropped on a handle directly, onConnect already handled it
     const target = event?.target || event?.nativeEvent?.target;
     if ((target as HTMLElement)?.closest?.('.react-flow__handle')) {
       pendingConnectionRef.current = null;
       return;
     }
 
-    // Use last tracked pointer position (always reliable)
     const { x: cx, y: cy } = lastPointerRef.current;
     if (!cx && !cy) { pendingConnectionRef.current = null; return; }
 
+    // Check if dropped on a card node (not on a handle) → auto-connect
+    const dropEl = (target as HTMLElement)?.closest?.('.react-flow__node') as HTMLElement | null;
+    if (dropEl) {
+      const targetNodeId = dropEl.getAttribute('data-id');
+      if (targetNodeId && targetNodeId !== pending.nodeId) {
+        // Find the target node's category
+        const targetNode = rfGetNodes().find((n) => n.id === targetNodeId);
+        const category = (targetNode?.data as Record<string, unknown>)?.category as string | undefined;
+        const targetHandles = category ? (CARD_TARGET_HANDLES[category] || []) : [];
+        const sourceType = getHandleDataType(pending.handleId);
+
+        // Find compatible target handle
+        const compatibleHandle = targetHandles.find((h) => getHandleDataType(h) === sourceType);
+        if (compatibleHandle) {
+          setEdges((eds) => addEdge({
+            source: pending.nodeId,
+            sourceHandle: pending.handleId,
+            target: targetNodeId,
+            targetHandle: compatibleHandle,
+            ...defaultEdgeOptions,
+          }, eds));
+          pendingConnectionRef.current = null;
+          return;
+        }
+      }
+    }
+
+    // Dropped on empty space → open context menu
     const flowPos = screenToFlowPosition({ x: cx, y: cy });
     setContextMenuFlowPos(flowPos);
     setContextMenu({ x: cx, y: cy });
     // pendingConnectionRef stays alive — handleMenuSelect will use it
-  }, [screenToFlowPosition]);
+  }, [screenToFlowPosition, rfGetNodes, setEdges]);
 
   // Handle context menu open
   const handleContextMenu = useCallback((event: React.MouseEvent) => {

@@ -61,7 +61,9 @@ const defaultEdgeOptions = {
 
 function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: StudioProject | null; onProjectSaved?: () => void }) {
   const { user } = useAuth();
-  const { zoomIn, zoomOut, fitView, screenToFlowPosition, getViewport, getNodes: rfGetNodes } = useReactFlow();
+  const rfFlow = useReactFlow();
+  const { zoomIn, zoomOut, fitView, screenToFlowPosition, getViewport, getNodes: rfGetNodes, setViewport } = rfFlow;
+  const rfInstance = useRef<{ setViewport: typeof setViewport }>({ setViewport });
 
   const [models, setModels] = useState<AIModel[]>([]);
   const [primaryPhoto, setPrimaryPhoto] = useState<ModelPhoto | null>(null);
@@ -105,9 +107,26 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     setNodes(projectNodes);
     setEdges(projectEdges);
     setSaveStatus('saved');
+
+    // Restore saved viewport (position + zoom)
+    const savedViewport = activeProject.viewport as { x: number; y: number; zoom: number } | null;
+    if (savedViewport && typeof savedViewport.x === 'number') {
+      // Wait for nodes to render, then set viewport
+      setTimeout(() => {
+        const { setViewport } = rfInstance.current || {};
+        if (setViewport) {
+          setViewport(savedViewport, { duration: 0 });
+        }
+      }, 100);
+    }
+
     // Allow auto-save again after a tick (so initial load doesn't trigger save)
     setTimeout(() => { loadingProjectRef.current = false; }, 500);
   }, [activeProject?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Ref to get current nodes from ReactFlow state (includes updated positions from drags)
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
 
   // Stable auto-save function — never changes identity
   const triggerAutoSave = useCallback(() => {
@@ -120,6 +139,20 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
       if (!proj) return;
       setSaveStatus('saving');
       const viewport = getViewportRef.current();
+
+      // Use ReactFlow's current nodes (has updated positions from drags)
+      const currentNodes = nodesRef.current;
+
+      // Sync positions back to refs so rebuildNodes doesn't overwrite them
+      spawnedCardsRef.current = spawnedCardsRef.current.map((card) => {
+        const rfNode = currentNodes.find((n) => n.id === card.id);
+        return rfNode ? { ...card, position: rfNode.position } : card;
+      });
+      resultsRef.current = resultsRef.current.map((res) => {
+        const rfNode = currentNodes.find((n) => n.id === res.id);
+        return rfNode ? { ...res, position: rfNode.position } : res;
+      });
+
       const allNodes = [...spawnedCardsRef.current, ...resultsRef.current];
       const cleanNodes = allNodes.map((n) => ({
         ...n,
@@ -127,7 +160,6 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
       }));
       const success = await saveProject(proj.id, cleanNodes, edgesRef.current, viewport);
       setSaveStatus(success ? 'saved' : 'unsaved');
-      // Don't call onProjectSaved to avoid reloading the active project
     }, 2000);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -300,32 +332,32 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onConnectEnd = useCallback((event: any) => {
+  const onConnectEnd = useCallback((_event: any) => {
     const pending = pendingConnectionRef.current;
     if (!pending) return;
-
-    // If dropped on a handle directly, onConnect already handled it
-    const target = event?.target || event?.nativeEvent?.target;
-    if ((target as HTMLElement)?.closest?.('.react-flow__handle')) {
-      pendingConnectionRef.current = null;
-      return;
-    }
 
     const { x: cx, y: cy } = lastPointerRef.current;
     if (!cx && !cy) { pendingConnectionRef.current = null; return; }
 
-    // Check if dropped on a card node (not on a handle) → auto-connect
-    const dropEl = (target as HTMLElement)?.closest?.('.react-flow__node') as HTMLElement | null;
-    if (dropEl) {
-      const targetNodeId = dropEl.getAttribute('data-id');
+    // Check what element is under the cursor using document.elementFromPoint
+    const elUnderCursor = document.elementFromPoint(cx, cy) as HTMLElement | null;
+
+    // If on a handle, onConnect already handled it
+    if (elUnderCursor?.closest?.('.react-flow__handle')) {
+      pendingConnectionRef.current = null;
+      return;
+    }
+
+    // If on a card node → auto-connect to best compatible handle
+    const cardEl = elUnderCursor?.closest?.('.react-flow__node') as HTMLElement | null;
+    if (cardEl) {
+      const targetNodeId = cardEl.getAttribute('data-id');
       if (targetNodeId && targetNodeId !== pending.nodeId) {
-        // Find the target node's category
         const targetNode = rfGetNodes().find((n) => n.id === targetNodeId);
         const category = (targetNode?.data as Record<string, unknown>)?.category as string | undefined;
         const targetHandles = category ? (CARD_TARGET_HANDLES[category] || []) : [];
         const sourceType = getHandleDataType(pending.handleId);
 
-        // Find compatible target handle
         const compatibleHandle = targetHandles.find((h) => getHandleDataType(h) === sourceType);
         if (compatibleHandle) {
           setEdges((eds) => addEdge({
@@ -545,8 +577,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         defaultEdgeOptions={defaultEdgeOptions}
         edgesReconnectable
         edgesFocusable
-        fitView
-        fitViewOptions={{ padding: 0.15 }}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         minZoom={0.2}
         maxZoom={2}
         proOptions={{ hideAttribution: true }}

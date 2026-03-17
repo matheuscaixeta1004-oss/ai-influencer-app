@@ -111,17 +111,61 @@ function TogglePill({ label, value, onChange }: { label: string; value: boolean;
   );
 }
 
-// ─── Sidebar icon button ─────────────────────────────────────────────
-function SideBtn({ icon, title, onClick }: { icon: React.ReactNode; title: string; onClick?: () => void }) {
+// ─── Handle-button: a sidebar circle that IS a ReactFlow handle ──────
+function HandleBtn({
+  id,
+  type,
+  position,
+  icon,
+  title,
+  topOffset,
+}: {
+  id: string;
+  type: 'source' | 'target';
+  position: Position;
+  icon: React.ReactNode;
+  title: string;
+  topOffset: number;
+}) {
+  const isLeft = position === Position.Left;
   return (
-    <button
+    <div
+      className="absolute flex items-center justify-center"
+      style={{
+        top: topOffset,
+        [isLeft ? 'left' : 'right']: -20,
+        width: 36,
+        height: 36,
+        zIndex: 10,
+      }}
       title={title}
-      onClick={onClick}
-      className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors cursor-pointer"
-      style={{ background: '#2e2e2e', border: '1px solid rgba(255,255,255,0.08)' }}
     >
-      {icon}
-    </button>
+      {/* Visual circle */}
+      <div
+        className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors pointer-events-none"
+        style={{ background: '#2e2e2e', border: '1px solid rgba(255,255,255,0.12)' }}
+      >
+        {icon}
+      </div>
+      {/* Invisible handle on the outer edge of the circle */}
+      <Handle
+        type={type}
+        position={position}
+        id={id}
+        style={{
+          position: 'absolute',
+          [isLeft ? 'left' : 'right']: 0,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: 12,
+          height: 12,
+          background: 'transparent',
+          border: 'none',
+          zIndex: 20,
+        }}
+        isConnectable={true}
+      />
+    </div>
   );
 }
 
@@ -161,12 +205,13 @@ function ImageGenCard({
   ];
 
   return (
-    <div className="flex">
-      {/* Left sidebar */}
-      <div className="flex flex-col gap-2 pr-2 pt-10">
-        <SideBtn icon={<MdTextFields size={18} />} title="Referência de texto" />
-        <SideBtn icon={<MdImage size={18} />} title="Imagem de referência" />
-      </div>
+    <div className="relative" style={{ padding: '0 24px' }}>
+      {/* Left sidebar handles */}
+      <HandleBtn id="text-ref" type="target" position={Position.Left} icon={<MdTextFields size={18} />} title="Referência de texto" topOffset={80} />
+      <HandleBtn id="image-ref" type="target" position={Position.Left} icon={<MdImage size={18} />} title="Imagem de referência" topOffset={124} />
+
+      {/* Right sidebar handles */}
+      <HandleBtn id="output-ref" type="source" position={Position.Right} icon={<MdImage size={18} />} title="Usar como referência" topOffset={80} />
 
       {/* Card body */}
       <div
@@ -174,18 +219,13 @@ function ImageGenCard({
         style={{
           background: '#1e1e1e',
           border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
         }}
       >
         {/* Title bar */}
         <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <MdImage size={18} className="text-gray-400" />
           <span className="text-[13px] font-semibold text-white">Gerador de Imagem #{cardIndex}</span>
-          {data.comingSoon && (
-            <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(255,165,0,0.15)', color: '#FFA500' }}>
-              Em breve
-            </span>
-          )}
         </div>
 
         {/* Preview area */}
@@ -222,19 +262,11 @@ function ImageGenCard({
         <div className="px-3 pb-2 flex items-center gap-2 flex-wrap">
           <QuantityPill value={quantity} onChange={setQuantity} />
           <PillSelect value={model} onChange={setModel} options={modelOptions} />
-          <PillSelect
-            value={aspectRatio}
-            onChange={setAspectRatio}
-            options={aspectOptions}
-            icon={<MdAspectRatio size={14} />}
-          />
+          <PillSelect value={aspectRatio} onChange={setAspectRatio} options={aspectOptions} icon={<MdAspectRatio size={14} />} />
         </div>
 
         {/* Controls row 2 + generate */}
-        <div
-          className="px-3 py-2.5 flex items-center gap-2"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-        >
+        <div className="px-3 py-2.5 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <PillSelect value={quality} onChange={setQuality} options={qualityOptions} />
           <button
             className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors"
@@ -255,11 +287,6 @@ function ImageGenCard({
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Right sidebar */}
-      <div className="flex flex-col gap-2 pl-2 pt-10">
-        <SideBtn icon={<MdImage size={18} />} title="Usar como referência" />
       </div>
     </div>
   );
@@ -305,13 +332,17 @@ function VideoGenCard({
   ];
 
   return (
-    <div className="flex">
-      {/* Left sidebar */}
-      <div className="flex flex-col gap-2 pr-2 pt-10">
-        <SideBtn icon={<MdTextFields size={18} />} title="Referência de texto" />
-        <SideBtn icon={<MdImage size={18} />} title="Imagem de referência" />
-        <SideBtn icon={<MdImage size={18} />} title="Imagem de referência adicional" />
-      </div>
+    <div className="relative" style={{ padding: '0 24px' }}>
+      {/* Left sidebar handles */}
+      <HandleBtn id="text-ref" type="target" position={Position.Left} icon={<MdTextFields size={18} />} title="Referência de texto" topOffset={80} />
+      <HandleBtn id="image-ref" type="target" position={Position.Left} icon={<MdImage size={18} />} title="Imagem de referência" topOffset={124} />
+      <HandleBtn id="image-ref-2" type="target" position={Position.Left} icon={<MdImage size={18} />} title="Imagem de referência adicional" topOffset={168} />
+
+      {/* Right sidebar handles */}
+      <HandleBtn id="keyframe-start" type="target" position={Position.Right} icon={<MdImage size={18} />} title="Keyframe inicial" topOffset={80} />
+      <HandleBtn id="keyframe-end" type="target" position={Position.Right} icon={<MdImage size={18} />} title="Keyframe final" topOffset={124} />
+      <HandleBtn id="video-ref" type="target" position={Position.Right} icon={<MdVideocam size={18} />} title="Referência de vídeo" topOffset={168} />
+      <HandleBtn id="audio-ref" type="target" position={Position.Right} icon={<MdGraphicEq size={18} />} title="Referência de áudio" topOffset={212} />
 
       {/* Card body */}
       <div
@@ -319,18 +350,13 @@ function VideoGenCard({
         style={{
           background: '#1e1e1e',
           border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
         }}
       >
         {/* Title bar */}
         <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <MdVideocam size={18} className="text-gray-400" />
           <span className="text-[13px] font-semibold text-white">Gerador de Vídeo #{cardIndex}</span>
-          {data.comingSoon && (
-            <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(255,165,0,0.15)', color: '#FFA500' }}>
-              Em breve
-            </span>
-          )}
         </div>
 
         {/* Preview area */}
@@ -367,20 +393,12 @@ function VideoGenCard({
         <div className="px-3 pb-2 flex items-center gap-2 flex-wrap">
           <QuantityPill value={quantity} onChange={setQuantity} />
           <PillSelect value={model} onChange={setModel} options={modelOptions} />
-          <PillSelect
-            value={aspectRatio}
-            onChange={setAspectRatio}
-            options={aspectOptions}
-            icon={<MdAspectRatio size={14} />}
-          />
+          <PillSelect value={aspectRatio} onChange={setAspectRatio} options={aspectOptions} icon={<MdAspectRatio size={14} />} />
           <PillSelect value={duration} onChange={setDuration} options={durationOptions} />
         </div>
 
         {/* Controls row 2 + generate */}
-        <div
-          className="px-3 py-2.5 flex items-center gap-2 flex-wrap"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-        >
+        <div className="px-3 py-2.5 flex items-center gap-2 flex-wrap" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <PillSelect value={resolution} onChange={setResolution} options={resolutionOptions} />
           <TogglePill label="Som" value={soundFx} onChange={setSoundFx} />
           <div className="ml-auto">
@@ -396,14 +414,6 @@ function VideoGenCard({
           </div>
         </div>
       </div>
-
-      {/* Right sidebar */}
-      <div className="flex flex-col gap-2 pl-2 pt-10">
-        <SideBtn icon={<MdImage size={18} />} title="Keyframe inicial" />
-        <SideBtn icon={<MdImage size={18} />} title="Keyframe final" />
-        <SideBtn icon={<MdVideocam size={18} />} title="Referência de vídeo" />
-        <SideBtn icon={<MdGraphicEq size={18} />} title="Referência de áudio" />
-      </div>
     </div>
   );
 }
@@ -411,38 +421,38 @@ function VideoGenCard({
 // ─── Model Ref Card (small) ──────────────────────────────────────────
 function ModelRefCard({ data }: { data: GenerationCardNodeData }) {
   return (
-    <div
-      className="w-[200px] rounded-2xl overflow-hidden flex flex-col"
-      style={{
-        background: '#1e1e1e',
-        border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-      }}
-    >
-      {/* Title */}
-      <div className="flex items-center gap-2 px-3 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <MdPerson size={16} className="text-gray-400" />
-        <span className="text-[12px] font-semibold text-white">Modelo</span>
-      </div>
+    <div className="relative" style={{ padding: '0 24px' }}>
+      {/* Output handle on right */}
+      <HandleBtn id="model-out" type="source" position={Position.Right} icon={<MdPerson size={16} />} title="Conectar modelo" topOffset={50} />
 
-      {/* Avatar */}
-      <div className="mx-3 my-2.5 rounded-xl overflow-hidden" style={{ height: 100, background: '#111' }}>
-        {data.modelAvatar ? (
-          <img src={data.modelAvatar} alt="Modelo" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center opacity-30">
-            <MdPerson size={36} className="text-gray-500" />
+      <div
+        className="w-[200px] rounded-2xl overflow-hidden flex flex-col"
+        style={{
+          background: '#1e1e1e',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+        }}
+      >
+        <div className="flex items-center gap-2 px-3 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <MdPerson size={16} className="text-gray-400" />
+          <span className="text-[12px] font-semibold text-white">Modelo</span>
+        </div>
+        <div className="mx-3 my-2.5 rounded-xl overflow-hidden" style={{ height: 100, background: '#111' }}>
+          {data.modelAvatar ? (
+            <img src={data.modelAvatar} alt="Modelo" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center opacity-30">
+              <MdPerson size={36} className="text-gray-500" />
+            </div>
+          )}
+        </div>
+        <div className="px-3 pb-3">
+          <div
+            className="w-full px-2.5 py-1.5 rounded-lg text-[12px] text-gray-300 truncate"
+            style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            {data.modelName || 'Selecionar modelo'}
           </div>
-        )}
-      </div>
-
-      {/* Model name */}
-      <div className="px-3 pb-3">
-        <div
-          className="w-full px-2.5 py-1.5 rounded-lg text-[12px] text-gray-300 truncate"
-          style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.06)' }}
-        >
-          {data.modelName || 'Selecionar modelo'}
         </div>
       </div>
     </div>
@@ -452,16 +462,10 @@ function ModelRefCard({ data }: { data: GenerationCardNodeData }) {
 // ─── Main component ──────────────────────────────────────────────────
 function GenerationCardNodeInner({ data, id }: NodeProps) {
   const cardData = data as unknown as GenerationCardNodeData;
-  const {
-    category,
-    hasSourceHandle,
-    hasTargetHandle,
-    comingSoon,
-  } = cardData;
+  const { category, comingSoon } = cardData;
 
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Extract card index from node id (e.g. card-image_gen-1234-2 → index from cardCounter)
   const cardIndex = (() => {
     const parts = id.split('-');
     const last = parts[parts.length - 1];
@@ -476,69 +480,26 @@ function GenerationCardNodeInner({ data, id }: NodeProps) {
     setTimeout(() => setIsGenerating(false), 2500);
   };
 
-  const handleStyle = {
-    width: 10,
-    height: 10,
-    background: '#555',
-    border: '2px solid rgba(255,255,255,0.3)',
-    borderRadius: '50%',
-  };
-
   return (
-    <div className="relative select-none" style={{ overflow: 'visible' }}>
-      {/* Target handle (left side — input) */}
-      {hasTargetHandle && (
-        <Handle
-          type="target"
-          position={Position.Left}
-          style={{ ...handleStyle, left: -5 }}
-        />
-      )}
-
-      {/* Source handle (right side — output) */}
-      {hasSourceHandle && (
-        <Handle
-          type="source"
-          position={Position.Right}
-          style={{ ...handleStyle, right: -5 }}
-        />
-      )}
-
-      {/* Render the appropriate card type */}
+    <div className="select-none" style={{ overflow: 'visible' }}>
       {category === 'image_gen' && (
-        <ImageGenCard
-          data={cardData}
-          cardIndex={cardIndex}
-          isGenerating={isGenerating}
-          onGenerate={handleGenerate}
-        />
+        <ImageGenCard data={cardData} cardIndex={cardIndex} isGenerating={isGenerating} onGenerate={handleGenerate} />
       )}
       {category === 'video_gen' && (
-        <VideoGenCard
-          data={cardData}
-          cardIndex={cardIndex}
-          isGenerating={isGenerating}
-          onGenerate={handleGenerate}
-        />
+        <VideoGenCard data={cardData} cardIndex={cardIndex} isGenerating={isGenerating} onGenerate={handleGenerate} />
       )}
       {category === 'model_ref' && (
         <ModelRefCard data={cardData} />
       )}
       {(category === 'prompt' || category === 'ref_image') && (
-        <LegacyCard data={cardData} isGenerating={isGenerating} onGenerate={handleGenerate} />
+        <LegacyCard data={cardData} />
       )}
     </div>
   );
 }
 
 // ─── Legacy compact card for prompt/ref_image ────────────────────────
-function LegacyCard({
-  data,
-}: {
-  data: GenerationCardNodeData;
-  isGenerating?: boolean;
-  onGenerate?: () => void;
-}) {
+function LegacyCard({ data }: { data: GenerationCardNodeData }) {
   const [values, setValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     data.fields?.forEach((f) => { init[f.id] = f.defaultValue || ''; });
@@ -549,79 +510,81 @@ function LegacyCard({
   const TitleIcon = data.category === 'prompt' ? MdTextFields : MdImage;
 
   return (
-    <div
-      className="w-[300px] rounded-2xl overflow-hidden"
-      style={{
-        background: '#1e1e1e',
-        border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-      }}
-    >
-      {/* Title bar */}
-      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <TitleIcon size={16} className="text-gray-400" />
-        <span className="text-[13px] font-semibold text-white">{data.title}</span>
-        {data.comingSoon && (
-          <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(255,165,0,0.15)', color: '#FFA500' }}>
-            Em breve
-          </span>
-        )}
-      </div>
+    <div className="relative" style={{ padding: '0 24px' }}>
+      {/* Handles */}
+      {data.hasTargetHandle && (
+        <HandleBtn id="input" type="target" position={Position.Left} icon={TitleIcon === MdTextFields ? <MdTextFields size={16} /> : <MdImage size={16} />} title="Entrada" topOffset={40} />
+      )}
+      {data.hasSourceHandle && (
+        <HandleBtn id="output" type="source" position={Position.Right} icon={TitleIcon === MdTextFields ? <MdTextFields size={16} /> : <MdImage size={16} />} title="Saída" topOffset={40} />
+      )}
 
-      {/* Fields */}
-      <div className="px-4 py-3 space-y-2.5">
-        {data.fields?.map((field) => (
-          <div key={field.id}>
-            <label className="block text-[11px] font-medium text-gray-500 mb-1">{field.label}</label>
-            {field.type === 'textarea' ? (
-              <textarea
-                value={values[field.id] || ''}
-                onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
-                placeholder={field.placeholder}
-                rows={4}
-                className="w-full text-[13px] px-3 py-2 rounded-lg resize-none outline-none placeholder-[#555]"
-                style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.08)', color: '#e0e0e0' }}
-              />
-            ) : field.type === 'upload' ? (
-              <div
-                className="w-full rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-6 cursor-pointer hover:opacity-80 transition-opacity"
-                style={{ borderColor: 'rgba(255,255,255,0.12)', background: '#2a2a2a' }}
-                onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*';
-                  input.onchange = (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (file) {
-                      const url = URL.createObjectURL(file);
-                      setUploadPreview(url);
-                      setValues((v) => ({ ...v, [field.id]: url }));
-                    }
-                  };
-                  input.click();
-                }}
-              >
-                {uploadPreview ? (
-                  <img src={uploadPreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
-                ) : (
-                  <>
-                    <MdImage size={28} className="text-gray-600" />
-                    <span className="text-[11px] text-gray-500">{field.placeholder || 'Upload'}</span>
-                  </>
-                )}
-              </div>
-            ) : (
-              <input
-                type="text"
-                value={values[field.id] || ''}
-                onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
-                placeholder={field.placeholder}
-                className="w-full text-[13px] px-3 py-1.5 rounded-lg outline-none placeholder-[#555]"
-                style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.08)', color: '#e0e0e0' }}
-              />
-            )}
-          </div>
-        ))}
+      <div
+        className="w-[300px] rounded-2xl overflow-hidden"
+        style={{
+          background: '#1e1e1e',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+        }}
+      >
+        <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <TitleIcon size={16} className="text-gray-400" />
+          <span className="text-[13px] font-semibold text-white">{data.title}</span>
+        </div>
+        <div className="px-4 py-3 space-y-2.5">
+          {data.fields?.map((field) => (
+            <div key={field.id}>
+              <label className="block text-[11px] font-medium text-gray-500 mb-1">{field.label}</label>
+              {field.type === 'textarea' ? (
+                <textarea
+                  value={values[field.id] || ''}
+                  onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
+                  placeholder={field.placeholder}
+                  rows={4}
+                  className="w-full text-[13px] px-3 py-2 rounded-lg resize-none outline-none placeholder-[#555]"
+                  style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.08)', color: '#e0e0e0' }}
+                />
+              ) : field.type === 'upload' ? (
+                <div
+                  className="w-full rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-6 cursor-pointer hover:opacity-80 transition-opacity"
+                  style={{ borderColor: 'rgba(255,255,255,0.12)', background: '#2a2a2a' }}
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        const url = URL.createObjectURL(file);
+                        setUploadPreview(url);
+                        setValues((v) => ({ ...v, [field.id]: url }));
+                      }
+                    };
+                    input.click();
+                  }}
+                >
+                  {uploadPreview ? (
+                    <img src={uploadPreview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
+                  ) : (
+                    <>
+                      <MdImage size={28} className="text-gray-600" />
+                      <span className="text-[11px] text-gray-500">{field.placeholder || 'Upload'}</span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={values[field.id] || ''}
+                  onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
+                  placeholder={field.placeholder}
+                  className="w-full text-[13px] px-3 py-1.5 rounded-lg outline-none placeholder-[#555]"
+                  style={{ background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.08)', color: '#e0e0e0' }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

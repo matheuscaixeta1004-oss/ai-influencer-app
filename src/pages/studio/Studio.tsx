@@ -48,7 +48,7 @@ const nodeTypes: NodeTypes = {
 // Default edge style — soft bezier, dark gray
 const defaultEdgeOptions = {
   type: 'default',
-  style: { stroke: '#444', strokeWidth: 2 },
+  style: { stroke: '#94A3B8', strokeWidth: 2 },
   animated: false,
 };
 
@@ -227,19 +227,18 @@ function StudioCanvas() {
           className="absolute bottom-4 left-4 z-10 px-3 py-2 rounded-xl"
           style={{
             background: '#1e1e1e',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(0,0,0,0.06)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
           }}
         >
-          <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#555' }}>Modelo ativo</label>
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Modelo ativo</label>
           <select
             value={selectedModel?.id || ''}
             onChange={(e) => {
               const m = models.find((mod) => mod.id === e.target.value);
               if (m) setSelectedModel(m);
             }}
-            className="block mt-1 text-[13px] font-medium bg-transparent border-none outline-none cursor-pointer"
-            style={{ color: '#e0e0e0' }}
+            className="block mt-1 text-[13px] font-medium bg-transparent border-none outline-none cursor-pointer text-gray-800"
           >
             {models.map((m) => (
               <option key={m.id} value={m.id} style={{ background: '#222' }}>{m.name}</option>
@@ -258,7 +257,7 @@ function StudioCanvas() {
             >
               <MdPerson size={32} style={{ color: '#00AFF0' }} />
             </div>
-            <h2 className="text-lg font-semibold mb-1" style={{ color: '#e0e0e0' }}>Crie seu primeiro modelo</h2>
+            <h2 className="text-lg font-semibold mb-1 text-gray-800">Crie seu primeiro modelo</h2>
             <p className="text-[13px] mb-4 max-w-sm" style={{ color: '#666' }}>
               Para usar o Studio, primeiro crie uma modelo virtual no wizard.
             </p>
@@ -283,7 +282,7 @@ function StudioCanvas() {
           <div className="text-center">
             <div
               className="w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)' }}
             >
               <MdAutoFixHigh size={24} style={{ color: 'rgba(255,255,255,0.3)' }} />
             </div>
@@ -310,13 +309,13 @@ function StudioCanvas() {
         className="studio-canvas"
         onContextMenu={handleContextMenu}
         onPaneClick={closeContextMenu}
-        style={{ background: '#121212' }}
+        style={{ background: '#FAFAFA' }}
       >
         <Background
           variant={BackgroundVariant.Dots}
           gap={28}
           size={1}
-          color="rgba(255,255,255,0.08)"
+          color="#B8D4E8"
         />
       </ReactFlow>
 
@@ -335,14 +334,14 @@ function StudioCanvas() {
 
 export function Studio() {
   return (
-    <div className="fixed inset-0 ml-[244px]" style={{ background: '#121212', fontFamily: "'Geist', sans-serif" }}>
+    <div className="fixed inset-0 ml-[244px]" style={{ background: '#FAFAFA', fontFamily: "'Geist', sans-serif" }}>
       {/* Studio header — dark theme */}
       <div
         className="absolute top-0 left-0 right-0 h-14 z-20 flex items-center px-6"
         style={{
-          background: 'rgba(18,18,18,0.9)',
+          background: 'rgba(255,255,255,0.85)',
           backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
         }}
       >
         <div className="flex items-center gap-3">
@@ -353,8 +352,8 @@ export function Studio() {
             <MdAutoFixHigh size={16} style={{ color: 'white' }} />
           </div>
           <div>
-            <h1 className="text-[15px] font-semibold" style={{ color: '#e0e0e0' }}>Studio</h1>
-            <p className="text-[11px] -mt-0.5" style={{ color: '#555' }}>Crie conteúdo visual para suas modelos</p>
+            <h1 className="text-[15px] font-semibold text-gray-800">Studio</h1>
+            <p className="text-[11px] -mt-0.5 text-gray-500">Crie conteúdo visual para suas modelos</p>
           </div>
         </div>
 
@@ -363,21 +362,21 @@ export function Studio() {
           <div className="flex items-center gap-2 text-[11px]" style={{ color: '#444' }}>
             <kbd
               className="px-1.5 py-0.5 rounded text-[10px] font-mono"
-              style={{ background: 'rgba(255,255,255,0.06)', color: '#666', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ background: '#F0F0F0', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}
             >
               Right-click
             </kbd>
             <span>novo card</span>
             <kbd
               className="px-1.5 py-0.5 rounded text-[10px] font-mono"
-              style={{ background: 'rgba(255,255,255,0.06)', color: '#666', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ background: '#F0F0F0', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}
             >
               Scroll
             </kbd>
             <span>zoom</span>
             <kbd
               className="px-1.5 py-0.5 rounded text-[10px] font-mono"
-              style={{ background: 'rgba(255,255,255,0.06)', color: '#666', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ background: '#F0F0F0', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}
             >
               Drag
             </kbd>

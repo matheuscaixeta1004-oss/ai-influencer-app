@@ -176,7 +176,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
           modelAvatar: primaryPhoto?.url || undefined,
           modelName: selectedModel?.name || (models.length === 0 ? 'Crie um modelo primeiro' : 'Selecionar modelo'),
           onGenerate: (params: Record<string, string>) =>
-            handleGenerate(tmpl.category as CardCategory, params),
+            handleGenerate(tmpl.category as CardCategory, params, card.id),
           hasSourceHandle: tmpl.hasSourceHandle,
           hasTargetHandle: tmpl.hasTargetHandle,
         },
@@ -186,41 +186,30 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     setNodes([...updatedSpawned, ...resultsRef.current]);
   }, [primaryPhoto, selectedModel, models, setNodes]);
 
-  // Handle mock generation
-  const handleGenerate = useCallback((category: CardCategory, params: Record<string, string>) => {
+  // Handle mock generation — updates the card's preview, no new node
+  const handleGenerate = useCallback((category: CardCategory, _params: Record<string, string>, sourceCardId?: string) => {
     const placeholders = PLACEHOLDER_IMAGES[category] || [];
     if (!placeholders.length) return;
 
     const idx = resultCounter % placeholders.length;
-    const newId = `result-${Date.now()}`;
 
-    const newNode: Node = {
-      id: newId,
-      type: 'resultCard',
-      position: { x: 1200 + (resultCounter % 3) * 260, y: 80 + Math.floor(resultCounter / 3) * 360 },
-      data: {
-        imageUrl: '',
-        prompt: Object.values(params).filter(Boolean).join(', '),
-        modelName: selectedModel?.name || 'Modelo',
-        category,
-        timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        status: 'generating',
-      },
-    };
-
-    resultsRef.current = [...resultsRef.current, newNode];
-    setResultCounter((c) => c + 1);
-    rebuildNodes();
-
-    setTimeout(() => {
-      resultsRef.current = resultsRef.current.map((n) =>
-        n.id === newId
-          ? { ...n, data: { ...n.data, imageUrl: placeholders[idx], status: 'done' } }
-          : n
+    // Mark card as generating
+    if (sourceCardId) {
+      spawnedCardsRef.current = spawnedCardsRef.current.map((c) =>
+        c.id === sourceCardId ? { ...c, data: { ...c.data, generatedStatus: 'generating', generatedImageUrl: undefined } } : c
       );
       rebuildNodes();
-    }, 2000);
-  }, [resultCounter, selectedModel, rebuildNodes]);
+
+      // Simulate generation delay, then show result in same card
+      setTimeout(() => {
+        spawnedCardsRef.current = spawnedCardsRef.current.map((c) =>
+          c.id === sourceCardId ? { ...c, data: { ...c.data, generatedStatus: 'done', generatedImageUrl: placeholders[idx] } } : c
+        );
+        setResultCounter((r) => r + 1);
+        rebuildNodes();
+      }, 2000);
+    }
+  }, [resultCounter, rebuildNodes]);
 
   // Rebuild when model/photo changes
   useEffect(() => {
@@ -237,15 +226,16 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   // ── Handle type classification ──────────────────────────────────────
   const getHandleDataType = (handleId: string | null | undefined): string => {
     if (!handleId) return 'any';
+    if (handleId === 'output' || handleId === 'input') return 'any'; // legacy
     if (handleId.startsWith('text')) return 'text';
-    if (handleId.startsWith('image') || handleId.startsWith('output-ref') || handleId.startsWith('keyframe')) return 'image';
+    if (handleId.startsWith('image') || handleId === 'output-ref' || handleId.startsWith('keyframe')) return 'image';
     if (handleId.startsWith('video')) return 'video';
     if (handleId.startsWith('audio')) return 'audio';
-    if (handleId.startsWith('model')) return 'model';
-    return 'any'; // legacy handles connect to anything
+    if (handleId.startsWith('model')) return 'image'; // model output → image reference
+    return 'any';
   };
 
-  // ── Connection validation — same type only ─────────────────────────
+  // ── Connection validation — compatible types only ──────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isValidConnection = useCallback((connection: any) => {
     const sourceType = getHandleDataType(connection.sourceHandle);
@@ -264,6 +254,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   const pendingConnectionRef = useRef<{ nodeId: string; handleId: string; handleType: 'source' | 'target' } | null>(null);
 
   const onConnectStart = useCallback((_event: unknown, params: { nodeId: string | null; handleId: string | null; handleType: 'source' | 'target' | null }) => {
+    console.log('[Studio] onConnectStart', params);
     // Only track SOURCE (output) handles — inputs don't trigger drag-to-create
     if (params.nodeId && params.handleId && params.handleType === 'source') {
       pendingConnectionRef.current = {
@@ -276,40 +267,29 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     }
   }, []);
 
-  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onConnectEnd = useCallback((event: any) => {
+    console.log('[Studio] onConnectEnd fired', { pending: pendingConnectionRef.current, event, type: typeof event, keys: Object.keys(event || {}) });
     if (!pendingConnectionRef.current) return;
 
-    // Extract the real DOM event (ReactFlow may wrap in synthetic event)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const raw: any = (event as any).nativeEvent ?? event;
-
     // Check if dropped on a valid target handle
-    const el = (raw.target ?? raw.changedTouches?.[0]?.target) as HTMLElement | null;
-    if (el?.closest?.('.react-flow__handle')) {
+    const target = event?.target || event?.nativeEvent?.target;
+    if ((target as HTMLElement)?.closest?.('.react-flow__handle')) {
       pendingConnectionRef.current = null;
       return;
     }
 
-    // Extract coordinates — try multiple approaches
-    let cx = 0;
-    let cy = 0;
-    if (typeof raw.clientX === 'number') {
-      cx = raw.clientX;
-      cy = raw.clientY;
-    } else if (raw.changedTouches?.[0]) {
-      cx = raw.changedTouches[0].clientX;
-      cy = raw.changedTouches[0].clientY;
-    } else if (typeof (event as any).clientX === 'number') {
-      cx = (event as any).clientX;
-      cy = (event as any).clientY;
-    }
+    // Extract coordinates — defensive, try everything
+    const cx = event?.clientX ?? event?.nativeEvent?.clientX ?? event?.changedTouches?.[0]?.clientX ?? 0;
+    const cy = event?.clientY ?? event?.nativeEvent?.clientY ?? event?.changedTouches?.[0]?.clientY ?? 0;
+    console.log('[Studio] onConnectEnd coords', { cx, cy });
 
     if (!cx && !cy) { pendingConnectionRef.current = null; return; }
 
     const flowPos = screenToFlowPosition({ x: cx, y: cy });
     setContextMenuFlowPos(flowPos);
     setContextMenu({ x: cx, y: cy });
-    // pendingConnectionRef stays alive — handleMenuSelect will use it and then clear it
+    // pendingConnectionRef stays alive — handleMenuSelect will use it
   }, [screenToFlowPosition]);
 
   // Handle context menu open
@@ -325,6 +305,21 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     pendingConnectionRef.current = null;
   }, []);
 
+  // Fallback: if user clicks on pane after a connection drag that didn't trigger onConnectEnd properly
+  const handlePaneClick = useCallback((event: React.MouseEvent) => {
+    // If there's a pending connection and no context menu open, open it
+    if (pendingConnectionRef.current && !contextMenu) {
+      console.log('[Studio] paneClick fallback — opening menu from pending connection');
+      const flowPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      setContextMenuFlowPos(flowPos);
+      setContextMenu({ x: event.clientX, y: event.clientY });
+      return;
+    }
+    // Normal pane click — close menu
+    setContextMenu(null);
+    pendingConnectionRef.current = null;
+  }, [contextMenu, screenToFlowPosition]);
+
   // Handle context menu selection — spawn a card (+ auto-connect if from handle drag)
   const handleMenuSelect = useCallback((itemId: string) => {
     const templateIdx = MENU_TO_TEMPLATE[itemId];
@@ -333,15 +328,16 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     const tmpl = CARD_TEMPLATES[templateIdx];
     if (tmpl.comingSoon) return;
 
+    const newCardId = `card-${tmpl.category}-${Date.now()}-${cardCounter}`;
     const newCard: Node = {
-      id: `card-${tmpl.category}-${Date.now()}-${cardCounter}`,
+      id: newCardId,
       type: 'generationCard',
       position: { x: contextMenuFlowPos.x, y: contextMenuFlowPos.y },
       data: {
         ...tmpl,
         modelAvatar: primaryPhoto?.url || undefined,
         modelName: selectedModel?.name || (models.length === 0 ? 'Crie um modelo primeiro' : 'Selecionar modelo'),
-        onGenerate: (params: Record<string, string>) => handleGenerate(tmpl.category as CardCategory, params),
+        onGenerate: (params: Record<string, string>) => handleGenerate(tmpl.category as CardCategory, params, newCardId),
         cardIndex: cardCounter + 1,
       },
       draggable: true,
@@ -496,7 +492,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         proOptions={{ hideAttribution: true }}
         className="studio-canvas"
         onContextMenu={handleContextMenu}
-        onPaneClick={closeContextMenu}
+        onPaneClick={handlePaneClick}
         style={{ background: '#FAFAFA' }}
       >
         <Background

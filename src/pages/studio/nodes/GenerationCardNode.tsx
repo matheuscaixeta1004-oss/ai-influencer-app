@@ -73,6 +73,8 @@ interface GenerationCardNodeData {
   hasTargetHandle?: boolean;
   onGenerate?: (params: Record<string, string>) => void;
   cardIndex?: number;
+  generatedImageUrl?: string;
+  generatedStatus?: 'idle' | 'generating' | 'done';
   [key: string]: unknown;
 }
 
@@ -264,6 +266,8 @@ function ImageGenCard({
               <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-blue-400 animate-spin" />
               <span className="text-[12px] text-gray-400">Gerando...</span>
             </div>
+          ) : data.generatedImageUrl ? (
+            <img src={data.generatedImageUrl} alt="Gerada" className="w-full h-full object-cover" />
           ) : (
             <div className="flex flex-col items-center gap-2 opacity-40">
               <MdImage size={40} className="text-gray-300" />
@@ -383,6 +387,8 @@ function VideoGenCard({
               <div className="w-10 h-10 rounded-full border-2 border-gray-200 border-t-orange-400 animate-spin" />
               <span className="text-[12px] text-gray-400">Gerando...</span>
             </div>
+          ) : data.generatedImageUrl ? (
+            <img src={data.generatedImageUrl} alt="Gerada" className="w-full h-full object-cover" />
           ) : (
             <div className="flex flex-col items-center gap-2 opacity-40">
               <MdVideocam size={40} className="text-gray-300" />

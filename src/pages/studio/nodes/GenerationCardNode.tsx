@@ -174,7 +174,7 @@ function HandleBtn({
       className="nodrag nopan absolute"
       style={{
         top: topOffset,
-        [isLeft ? 'left' : 'right']: -20,
+        [isLeft ? 'left' : 'right']: -38,
         width: 36,
         height: 36,
         zIndex: 50,

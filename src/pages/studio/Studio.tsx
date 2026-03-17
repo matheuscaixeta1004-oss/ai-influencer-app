@@ -73,14 +73,22 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  // Auto-save timer
+  // Auto-save — all via refs to avoid callback recreation loops
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeProjectRef = useRef(activeProject);
   activeProjectRef.current = activeProject;
+  const edgesRef = useRef(edges);
+  edgesRef.current = edges;
+  const getViewportRef = useRef(getViewport);
+  getViewportRef.current = getViewport;
+  const onProjectSavedRef = useRef(onProjectSaved);
+  onProjectSavedRef.current = onProjectSaved;
+  const loadingProjectRef = useRef(false);
 
   // Load project data when active project changes
   useEffect(() => {
     if (!activeProject) return;
+    loadingProjectRef.current = true;
     const projectNodes = (activeProject.nodes || []) as Node[];
     const projectEdges = (activeProject.edges || []) as Edge[];
 
@@ -91,11 +99,13 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     setNodes(projectNodes);
     setEdges(projectEdges);
     setSaveStatus('saved');
+    // Allow auto-save again after a tick (so initial load doesn't trigger save)
+    setTimeout(() => { loadingProjectRef.current = false; }, 500);
   }, [activeProject?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-save function (debounced 2s)
+  // Stable auto-save function — never changes identity
   const triggerAutoSave = useCallback(() => {
-    if (!activeProjectRef.current) return;
+    if (!activeProjectRef.current || loadingProjectRef.current) return;
     setSaveStatus('unsaved');
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -103,18 +113,17 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
       const proj = activeProjectRef.current;
       if (!proj) return;
       setSaveStatus('saving');
-      const viewport = getViewport();
+      const viewport = getViewportRef.current();
       const allNodes = [...spawnedCardsRef.current, ...resultsRef.current];
-      // Strip non-serializable data (functions) from nodes before saving
       const cleanNodes = allNodes.map((n) => ({
         ...n,
         data: { ...n.data, onGenerate: undefined },
       }));
-      const success = await saveProject(proj.id, cleanNodes, edges, viewport);
+      const success = await saveProject(proj.id, cleanNodes, edgesRef.current, viewport);
       setSaveStatus(success ? 'saved' : 'unsaved');
-      if (success) onProjectSaved?.();
+      // Don't call onProjectSaved to avoid reloading the active project
     }, 2000);
-  }, [edges, getViewport, onProjectSaved]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Track node/edge changes for auto-save
   const wrappedOnNodesChange: typeof onNodesChange = useCallback((...args) => {
@@ -169,8 +178,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     });
 
     setNodes([...updatedSpawned, ...resultsRef.current]);
-    triggerAutoSave();
-  }, [primaryPhoto, selectedModel, models, setNodes, triggerAutoSave]);
+  }, [primaryPhoto, selectedModel, models, setNodes]);
 
   // Handle mock generation
   const handleGenerate = useCallback((category: CardCategory, params: Record<string, string>) => {

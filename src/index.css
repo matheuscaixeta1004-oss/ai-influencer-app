@@ -42,6 +42,10 @@ body {
   transition: box-shadow 0.15s ease;
   overflow: visible !important;
 }
+.studio-canvas .react-flow__handle {
+  z-index: 50 !important;
+  pointer-events: all !important;
+}
 .studio-canvas .react-flow__node.selected {
   box-shadow: none !important;
 }

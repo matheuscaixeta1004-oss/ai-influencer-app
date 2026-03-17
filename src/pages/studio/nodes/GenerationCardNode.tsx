@@ -177,18 +177,18 @@ function HandleBtn({
         [isLeft ? 'left' : 'right']: -20,
         width: 36,
         height: 36,
-        zIndex: 10,
+        zIndex: 50,
       }}
       title={title}
     >
-      {/* Visual circle — behind the handle, no pointer events */}
+      {/* Visual circle */}
       <div
         className="absolute inset-0 rounded-full flex items-center justify-center text-gray-400 pointer-events-none"
         style={{ background: CARD.handleBg, border: CARD.handleBorder }}
       >
         {icon}
       </div>
-      {/* Handle covers the ENTIRE circle — catches all clicks/drags */}
+      {/* Handle — full circle, above everything */}
       <Handle
         type={type}
         position={position}
@@ -202,8 +202,9 @@ function HandleBtn({
           borderRadius: '50%',
           background: 'transparent',
           border: 'none',
-          zIndex: 20,
+          zIndex: 50,
           cursor: 'crosshair',
+          opacity: 0,
         }}
         isConnectable={true}
       />

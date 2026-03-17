@@ -14,6 +14,39 @@ import {
 } from 'react-icons/md';
 import type { CardCategory } from '../types';
 
+// ─── Aspect ratio → preview dimensions ───────────────────────────────
+function getPreviewDimensions(ratio: string, maxWidth: number) {
+  const BASE_HEIGHT = 220;
+  const MIN_CARD = 320;
+  const MAX_CARD = 480;
+
+  const [w, h] = ratio.split(':').map(Number);
+  if (!w || !h) return { width: maxWidth, height: BASE_HEIGHT, cardWidth: maxWidth + 26 };
+
+  const aspect = w / h;
+
+  let previewW: number;
+  let previewH: number;
+
+  if (aspect >= 1) {
+    // Landscape or square
+    previewW = maxWidth;
+    previewH = Math.round(maxWidth / aspect);
+  } else {
+    // Portrait — limit height, shrink width
+    previewH = Math.round(BASE_HEIGHT * 1.4);
+    previewW = Math.round(previewH * aspect);
+    if (previewW > maxWidth) {
+      previewW = maxWidth;
+      previewH = Math.round(maxWidth / aspect);
+    }
+  }
+
+  const cardWidth = Math.max(MIN_CARD, Math.min(MAX_CARD, previewW + 26));
+
+  return { width: previewW, height: previewH, cardWidth };
+}
+
 interface GenerationCardNodeData {
   category: CardCategory;
   title: string;
@@ -204,6 +237,9 @@ function ImageGenCard({
     { value: '4K', label: '4K' },
   ];
 
+  // Compute preview dimensions based on aspect ratio
+  const previewDimensions = getPreviewDimensions(aspectRatio, 394); // 420 - 2*13px padding
+
   return (
     <div className="relative" style={{ padding: '0 24px' }}>
       {/* Left sidebar handles */}
@@ -215,8 +251,9 @@ function ImageGenCard({
 
       {/* Card body */}
       <div
-        className="w-[420px] rounded-2xl overflow-hidden flex flex-col"
+        className="rounded-2xl overflow-hidden flex flex-col"
         style={{
+          width: previewDimensions.cardWidth,
           background: '#1e1e1e',
           border: '1px solid rgba(255,255,255,0.1)',
           boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
@@ -228,10 +265,10 @@ function ImageGenCard({
           <span className="text-[13px] font-semibold text-white">Gerador de Imagem #{cardIndex}</span>
         </div>
 
-        {/* Preview area */}
+        {/* Preview area — adapts to aspect ratio */}
         <div
-          className="relative mx-3 mt-3 rounded-xl overflow-hidden flex items-center justify-center"
-          style={{ height: 220, background: '#111' }}
+          className="relative mx-3 mt-3 rounded-xl overflow-hidden flex items-center justify-center transition-all duration-300"
+          style={{ width: previewDimensions.width, height: previewDimensions.height, background: '#111', alignSelf: 'center' }}
         >
           {isGenerating ? (
             <div className="flex flex-col items-center gap-3">
@@ -331,6 +368,8 @@ function VideoGenCard({
     { value: '1080p', label: '1080p' },
   ];
 
+  const previewDimensions = getPreviewDimensions(aspectRatio, 394);
+
   return (
     <div className="relative" style={{ padding: '0 24px' }}>
       {/* Left sidebar handles */}
@@ -346,8 +385,9 @@ function VideoGenCard({
 
       {/* Card body */}
       <div
-        className="w-[420px] rounded-2xl overflow-hidden flex flex-col"
+        className="rounded-2xl overflow-hidden flex flex-col"
         style={{
+          width: previewDimensions.cardWidth,
           background: '#1e1e1e',
           border: '1px solid rgba(255,255,255,0.1)',
           boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
@@ -359,10 +399,10 @@ function VideoGenCard({
           <span className="text-[13px] font-semibold text-white">Gerador de Vídeo #{cardIndex}</span>
         </div>
 
-        {/* Preview area */}
+        {/* Preview area — adapts to aspect ratio */}
         <div
-          className="relative mx-3 mt-3 rounded-xl overflow-hidden flex items-center justify-center"
-          style={{ height: 220, background: '#111' }}
+          className="relative mx-3 mt-3 rounded-xl overflow-hidden flex items-center justify-center transition-all duration-300"
+          style={{ width: previewDimensions.width, height: previewDimensions.height, background: '#111', alignSelf: 'center' }}
         >
           {isGenerating ? (
             <div className="flex flex-col items-center gap-3">

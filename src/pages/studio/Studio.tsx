@@ -228,10 +228,31 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     resultsRef.current = resultsRef.current.filter((r) => !deletedIds.has(r.id));
   }, []);
 
+  // ── Handle type classification ──────────────────────────────────────
+  const getHandleDataType = (handleId: string | null | undefined): string => {
+    if (!handleId) return 'any';
+    if (handleId.startsWith('text')) return 'text';
+    if (handleId.startsWith('image') || handleId.startsWith('output-ref') || handleId.startsWith('keyframe')) return 'image';
+    if (handleId.startsWith('video')) return 'video';
+    if (handleId.startsWith('audio')) return 'audio';
+    if (handleId.startsWith('model')) return 'model';
+    return 'any'; // legacy handles connect to anything
+  };
+
+  // ── Connection validation — same type only ─────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isValidConnection = useCallback((connection: any) => {
+    const sourceType = getHandleDataType(connection.sourceHandle);
+    const targetType = getHandleDataType(connection.targetHandle);
+    if (sourceType === 'any' || targetType === 'any') return true;
+    return sourceType === targetType;
+  }, []);
+
   // ── Handle edge connections ──────────────────────────────────────────
   const onConnect: OnConnect = useCallback((connection) => {
+    if (!isValidConnection(connection)) return;
     setEdges((eds) => addEdge({ ...connection, ...defaultEdgeOptions }, eds));
-  }, [setEdges]);
+  }, [setEdges, isValidConnection]);
 
   // ── Drag from handle → empty space → open menu & auto-connect ──────
   const pendingConnectionRef = useRef<{ nodeId: string; handleId: string; handleType: 'source' | 'target' } | null>(null);
@@ -250,32 +271,25 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   }, []);
 
   const onConnectEnd = useCallback((event: MouseEvent | TouchEvent) => {
-    const pending = pendingConnectionRef.current;
-    pendingConnectionRef.current = null;
-    if (!pending) return;
+    if (!pendingConnectionRef.current) return;
 
-    // Get the actual DOM event (ReactFlow may wrap it)
-    const rawEvent = (event as unknown as { nativeEvent?: MouseEvent | TouchEvent }).nativeEvent || event;
+    // Check if dropped on a valid target (another handle) — if so, onConnect handled it
+    const target = (event.target || (event as TouchEvent).changedTouches?.[0]?.target) as HTMLElement | null;
+    if (target?.closest?.('.react-flow__handle')) {
+      pendingConnectionRef.current = null;
+      return;
+    }
 
-    // Check if dropped on a valid target (another handle) — if so, onConnect already handled it
-    const target = rawEvent instanceof MouseEvent
-      ? (rawEvent.target as HTMLElement)
-      : ((rawEvent as TouchEvent).changedTouches?.[0]?.target as HTMLElement);
-    if (target?.closest?.('.react-flow__handle')) return;
+    // Dropped on empty space — open context menu (keep pendingRef alive for handleMenuSelect!)
+    const clientX = 'clientX' in event ? event.clientX : (event as TouchEvent).changedTouches?.[0]?.clientX ?? 0;
+    const clientY = 'clientY' in event ? event.clientY : (event as TouchEvent).changedTouches?.[0]?.clientY ?? 0;
 
-    // Dropped on empty space — open context menu at this position
-    const clientX = rawEvent instanceof MouseEvent
-      ? rawEvent.clientX
-      : (rawEvent as TouchEvent).changedTouches?.[0]?.clientX ?? 0;
-    const clientY = rawEvent instanceof MouseEvent
-      ? rawEvent.clientY
-      : (rawEvent as TouchEvent).changedTouches?.[0]?.clientY ?? 0;
-
-    if (!clientX && !clientY) return; // Safety check
+    if (!clientX && !clientY) { pendingConnectionRef.current = null; return; }
 
     const flowPos = screenToFlowPosition({ x: clientX, y: clientY });
     setContextMenuFlowPos(flowPos);
     setContextMenu({ x: clientX, y: clientY });
+    // pendingConnectionRef stays alive — handleMenuSelect will use it and then clear it
   }, [screenToFlowPosition]);
 
   // Handle context menu open
@@ -332,8 +346,12 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
 
       let newEdge: Parameters<typeof addEdge>[0] | null = null;
 
-      // Always from source → connect to the first target on the new card
-      const targetHandle = newCardHandles.targets[0];
+      // Find the first target handle that matches the source type
+      const sourceDataType = getHandleDataType(pending.handleId);
+      const targetHandle = newCardHandles.targets.find((h) => {
+        const t = getHandleDataType(h);
+        return t === sourceDataType || t === 'any' || sourceDataType === 'any';
+      }) || newCardHandles.targets[0];
       if (targetHandle) {
         newEdge = {
           source: pending.nodeId,
@@ -445,6 +463,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         onConnect={onConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
+        isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         fitView

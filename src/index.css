@@ -40,10 +40,13 @@ body {
 /* Studio canvas overrides */
 .studio-canvas .react-flow__node {
   transition: box-shadow 0.15s ease;
+  overflow: visible !important;
 }
 .studio-canvas .react-flow__node.selected {
-  box-shadow: 0 0 0 2px #00AFF0, 0 4px 16px rgba(0,175,240,0.15);
-  border-radius: 16px;
+  box-shadow: none !important;
+}
+.studio-canvas .react-flow__node.selected .studio-card {
+  box-shadow: 0 0 0 2px #00AFF0, 0 4px 16px rgba(0,175,240,0.15) !important;
 }
 .studio-canvas .react-flow__pane {
   cursor: grab;

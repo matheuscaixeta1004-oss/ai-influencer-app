@@ -246,13 +246,13 @@ function ImageGenCard({
   const previewDimensions = getPreviewDimensions(aspectRatio, 394);
 
   return (
-    <div className="relative" style={{ padding: '0 24px' }}>
+    <div className="relative" style={{ overflow: 'visible' }}>
       <HandleBtn id="text-ref" type="target" position={Position.Left} icon={<MdTextFields size={18} />} title="Referência de texto" topOffset={80} />
       <HandleBtn id="image-ref" type="target" position={Position.Left} icon={<MdImage size={18} />} title="Imagem de referência" topOffset={124} />
       <HandleBtn id="output-ref" type="source" position={Position.Right} icon={<MdImage size={18} />} title="Usar como referência" topOffset={80} />
 
       <div
-        className="rounded-2xl overflow-hidden flex flex-col"
+        className="studio-card rounded-2xl overflow-hidden flex flex-col"
         style={{ width: previewDimensions.cardWidth, background: CARD.bg, border: CARD.border, boxShadow: CARD.shadow }}
       >
         <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: CARD.divider }}>
@@ -361,7 +361,7 @@ function VideoGenCard({
   const previewDimensions = getPreviewDimensions(aspectRatio, 394);
 
   return (
-    <div className="relative" style={{ padding: '0 24px' }}>
+    <div className="relative" style={{ overflow: 'visible' }}>
       <HandleBtn id="text-ref" type="target" position={Position.Left} icon={<MdTextFields size={18} />} title="Referência de texto" topOffset={80} />
       <HandleBtn id="image-ref" type="target" position={Position.Left} icon={<MdImage size={18} />} title="Imagem de referência" topOffset={124} />
       <HandleBtn id="image-ref-2" type="target" position={Position.Left} icon={<MdImage size={18} />} title="Imagem de referência adicional" topOffset={168} />
@@ -371,7 +371,7 @@ function VideoGenCard({
       <HandleBtn id="audio-ref" type="target" position={Position.Right} icon={<MdGraphicEq size={18} />} title="Referência de áudio" topOffset={212} />
 
       <div
-        className="rounded-2xl overflow-hidden flex flex-col"
+        className="studio-card rounded-2xl overflow-hidden flex flex-col"
         style={{ width: previewDimensions.cardWidth, background: CARD.bg, border: CARD.border, boxShadow: CARD.shadow }}
       >
         <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: CARD.divider }}>
@@ -436,11 +436,11 @@ function VideoGenCard({
 // ─── Model Ref Card (small) ──────────────────────────────────────────
 function ModelRefCard({ data }: { data: GenerationCardNodeData }) {
   return (
-    <div className="relative" style={{ padding: '0 24px' }}>
+    <div className="relative" style={{ overflow: 'visible' }}>
       <HandleBtn id="model-out" type="source" position={Position.Right} icon={<MdPerson size={16} />} title="Conectar modelo" topOffset={50} />
 
       <div
-        className="w-[200px] rounded-2xl overflow-hidden flex flex-col"
+        className="studio-card w-[200px] rounded-2xl overflow-hidden flex flex-col"
         style={{ background: CARD.bg, border: CARD.border, boxShadow: CARD.shadow }}
       >
         <div className="flex items-center gap-2 px-3 py-2.5" style={{ borderBottom: CARD.divider }}>
@@ -491,7 +491,7 @@ function GenerationCardNodeInner({ data, id }: NodeProps) {
   };
 
   return (
-    <div className="select-none" style={{ overflow: 'visible' }}>
+    <div className="select-none" style={{ overflow: 'visible', position: 'relative' }}>
       {category === 'image_gen' && (
         <ImageGenCard data={cardData} cardIndex={cardIndex} isGenerating={isGenerating} onGenerate={handleGenerate} />
       )}
@@ -520,7 +520,7 @@ function LegacyCard({ data }: { data: GenerationCardNodeData }) {
   const TitleIcon = data.category === 'prompt' ? MdTextFields : MdImage;
 
   return (
-    <div className="relative" style={{ padding: '0 24px' }}>
+    <div className="relative" style={{ overflow: 'visible' }}>
       {data.hasTargetHandle && (
         <HandleBtn id="input" type="target" position={Position.Left} icon={TitleIcon === MdTextFields ? <MdTextFields size={16} /> : <MdImage size={16} />} title="Entrada" topOffset={40} />
       )}
@@ -529,7 +529,7 @@ function LegacyCard({ data }: { data: GenerationCardNodeData }) {
       )}
 
       <div
-        className="w-[300px] rounded-2xl overflow-hidden"
+        className="studio-card w-[300px] rounded-2xl overflow-hidden"
         style={{ background: CARD.bg, border: CARD.border, boxShadow: CARD.shadow }}
       >
         <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: CARD.divider }}>

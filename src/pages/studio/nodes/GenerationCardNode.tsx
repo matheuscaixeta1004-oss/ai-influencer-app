@@ -171,7 +171,7 @@ function HandleBtn({
   const isLeft = position === Position.Left;
   return (
     <div
-      className="absolute flex items-center justify-center"
+      className="absolute"
       style={{
         top: topOffset,
         [isLeft ? 'left' : 'right']: -20,
@@ -181,26 +181,29 @@ function HandleBtn({
       }}
       title={title}
     >
+      {/* Visual circle — behind the handle, no pointer events */}
       <div
-        className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors pointer-events-none"
+        className="absolute inset-0 rounded-full flex items-center justify-center text-gray-400 pointer-events-none"
         style={{ background: CARD.handleBg, border: CARD.handleBorder }}
       >
         {icon}
       </div>
+      {/* Handle covers the ENTIRE circle — catches all clicks/drags */}
       <Handle
         type={type}
         position={position}
         id={id}
         style={{
           position: 'absolute',
-          [isLeft ? 'left' : 'right']: 0,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: 12,
-          height: 12,
+          left: 0,
+          top: 0,
+          width: 36,
+          height: 36,
+          borderRadius: '50%',
           background: 'transparent',
           border: 'none',
           zIndex: 20,
+          cursor: 'crosshair',
         }}
         isConnectable={true}
       />

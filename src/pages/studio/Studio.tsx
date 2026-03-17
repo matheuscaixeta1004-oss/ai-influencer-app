@@ -15,7 +15,7 @@ import {
   addEdge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { MdAutoFixHigh, MdAdd, MdPerson, MdFolder, MdDelete, MdEdit } from 'react-icons/md';
+import { MdAutoFixHigh, MdAdd, MdPerson, MdImage, MdVideocam, MdDelete, MdEdit } from 'react-icons/md';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserModels, getModelPhotos } from '../../lib/models';
@@ -233,6 +233,37 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     setEdges((eds) => addEdge({ ...connection, ...defaultEdgeOptions }, eds));
   }, [setEdges]);
 
+  // ── Drag from handle → empty space → open menu & auto-connect ──────
+  const pendingConnectionRef = useRef<{ nodeId: string; handleId: string; handleType: 'source' | 'target' } | null>(null);
+
+  const onConnectStart = useCallback((_: unknown, params: { nodeId: string | null; handleId: string | null; handleType: 'source' | 'target' | null }) => {
+    if (params.nodeId && params.handleId && params.handleType) {
+      pendingConnectionRef.current = {
+        nodeId: params.nodeId,
+        handleId: params.handleId,
+        handleType: params.handleType,
+      };
+    }
+  }, []);
+
+  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent) => {
+    const pending = pendingConnectionRef.current;
+    pendingConnectionRef.current = null;
+    if (!pending) return;
+
+    // Check if dropped on a valid target (another handle) — if so, onConnect already handled it
+    const target = event instanceof MouseEvent ? event.target : (event as TouchEvent).changedTouches?.[0]?.target;
+    if (target instanceof HTMLElement && target.closest('.react-flow__handle')) return;
+
+    // Dropped on empty space — open context menu at this position
+    const clientX = event instanceof MouseEvent ? event.clientX : (event as TouchEvent).changedTouches?.[0]?.clientX ?? 0;
+    const clientY = event instanceof MouseEvent ? event.clientY : (event as TouchEvent).changedTouches?.[0]?.clientY ?? 0;
+
+    const flowPos = screenToFlowPosition({ x: clientX, y: clientY });
+    setContextMenuFlowPos(flowPos);
+    setContextMenu({ x: clientX, y: clientY });
+  }, [screenToFlowPosition]);
+
   // Handle context menu open
   const handleContextMenu = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
@@ -243,9 +274,10 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
 
   const closeContextMenu = useCallback(() => {
     setContextMenu(null);
+    pendingConnectionRef.current = null;
   }, []);
 
-  // Handle context menu selection — spawn a card
+  // Handle context menu selection — spawn a card (+ auto-connect if from handle drag)
   const handleMenuSelect = useCallback((itemId: string) => {
     const templateIdx = MENU_TO_TEMPLATE[itemId];
     if (templateIdx === undefined) return;
@@ -271,6 +303,53 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     spawnedCardsRef.current = [...spawnedCardsRef.current, newCard];
     setCardCounter((c) => c + 1);
     rebuildNodes();
+
+    // Auto-connect if spawned from a handle drag
+    const pending = pendingConnectionRef.current;
+    if (pending) {
+      // Determine which handle on the new card to connect to
+      const newCardHandles = tmpl.category === 'image_gen'
+        ? { targets: ['text-ref', 'image-ref'], sources: ['output-ref'] }
+        : tmpl.category === 'video_gen'
+        ? { targets: ['text-ref', 'image-ref', 'image-ref-2', 'keyframe-start', 'keyframe-end', 'video-ref', 'audio-ref'], sources: [] }
+        : tmpl.category === 'model_ref'
+        ? { targets: [], sources: ['model-out'] }
+        : { targets: ['input'], sources: ['output'] };
+
+      let newEdge: Parameters<typeof addEdge>[0] | null = null;
+
+      if (pending.handleType === 'source') {
+        // Dragged from a source → connect to the first target on the new card
+        const targetHandle = newCardHandles.targets[0];
+        if (targetHandle) {
+          newEdge = {
+            source: pending.nodeId,
+            sourceHandle: pending.handleId,
+            target: newCard.id,
+            targetHandle,
+            ...defaultEdgeOptions,
+          };
+        }
+      } else {
+        // Dragged from a target → connect from the first source on the new card
+        const sourceHandle = newCardHandles.sources[0];
+        if (sourceHandle) {
+          newEdge = {
+            source: newCard.id,
+            sourceHandle,
+            target: pending.nodeId,
+            targetHandle: pending.handleId,
+            ...defaultEdgeOptions,
+          };
+        }
+      }
+
+      if (newEdge) {
+        setEdges((eds) => addEdge(newEdge!, eds));
+      }
+      pendingConnectionRef.current = null;
+    }
+
     setContextMenu(null);
   }, [contextMenuFlowPos, cardCounter, primaryPhoto, selectedModel, models, handleGenerate, rebuildNodes]);
 
@@ -364,6 +443,8 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         onEdgesChange={wrappedOnEdgesChange}
         onNodesDelete={handleNodesDelete}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         fitView
@@ -397,61 +478,253 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   );
 }
 
+// ─── Spaces listing (project browser) ────────────────────────────────
+function SpacesView({
+  projects,
+  loading,
+  onOpen,
+  onCreate,
+  onDelete,
+  onRename,
+}: {
+  projects: StudioProject[];
+  loading: boolean;
+  onOpen: (p: StudioProject) => void;
+  onCreate: () => void;
+  onDelete: (id: string) => void;
+  onRename: (id: string, name: string) => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  const filtered = search
+    ? projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+    : projects;
+
+  return (
+    <div className="h-full overflow-y-auto px-8 py-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">Meus Spaces</h2>
+          <p className="text-[13px] text-gray-400 mt-0.5">{projects.length} {projects.length === 1 ? 'projeto' : 'projetos'}</p>
+        </div>
+        <button
+          onClick={onCreate}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white cursor-pointer transition-all hover:scale-105 active:scale-95"
+          style={{ background: 'linear-gradient(135deg, #00AFF0, #0099D4)', boxShadow: '0 2px 8px rgba(0,175,240,0.3)' }}
+        >
+          <MdAdd size={18} />
+          Novo Space
+        </button>
+      </div>
+
+      {/* Search */}
+      {projects.length > 3 && (
+        <div className="mb-5">
+          <input
+            type="text"
+            placeholder="Buscar projetos..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full max-w-md px-4 py-2.5 rounded-xl text-[13px] text-gray-700 outline-none placeholder-gray-400"
+            style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+          />
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && projects.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div
+            className="w-20 h-20 rounded-2xl flex items-center justify-center mb-5"
+            style={{ background: 'rgba(0,175,240,0.08)', border: '1px solid rgba(0,175,240,0.15)' }}
+          >
+            <MdAutoFixHigh size={36} style={{ color: '#00AFF0' }} />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhum space ainda</h3>
+          <p className="text-[13px] text-gray-400 mb-5 max-w-sm text-center">
+            Spaces são seus workflows visuais. Crie um para começar a gerar imagens e vídeos.
+          </p>
+          <button
+            onClick={onCreate}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white cursor-pointer"
+            style={{ background: 'linear-gradient(135deg, #00AFF0, #0099D4)' }}
+          >
+            <MdAdd size={16} />
+            Criar Primeiro Space
+          </button>
+        </div>
+      )}
+
+      {/* Project grid */}
+      {!loading && filtered.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {/* New space card */}
+          <button
+            onClick={onCreate}
+            className="group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed cursor-pointer transition-all hover:border-blue-300 hover:bg-blue-50/50"
+            style={{ borderColor: 'rgba(0,0,0,0.1)', minHeight: 180 }}
+          >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-2 transition-colors group-hover:bg-blue-100" style={{ background: 'rgba(0,0,0,0.04)' }}>
+              <MdAdd size={24} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+            </div>
+            <span className="text-[13px] font-medium text-gray-400 group-hover:text-blue-500 transition-colors">Novo Space</span>
+          </button>
+
+          {/* Existing projects */}
+          {filtered.map((proj) => {
+            const nodeCount = (proj.nodes as unknown[])?.length || 0;
+            const updated = new Date(proj.updated_at);
+            const isEditing = editingId === proj.id;
+
+            return (
+              <div
+                key={proj.id}
+                className="group rounded-2xl overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
+                style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+                onClick={() => !isEditing && onOpen(proj)}
+              >
+                {/* Thumbnail area */}
+                <div className="relative h-28 flex items-center justify-center" style={{ background: '#F3F4F6' }}>
+                  {nodeCount > 0 ? (
+                    <div className="flex items-center gap-1">
+                      <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center">
+                        <MdImage size={14} className="text-gray-400" />
+                      </div>
+                      <div className="w-1.5 h-px bg-gray-300" />
+                      <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center">
+                        <MdVideocam size={14} className="text-gray-400" />
+                      </div>
+                      <span className="ml-2 text-[10px] text-gray-400 font-medium">{nodeCount} cards</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 opacity-30">
+                      <MdAutoFixHigh size={24} className="text-gray-400" />
+                      <span className="text-[10px] text-gray-400">Vazio</span>
+                    </div>
+                  )}
+
+                  {/* Actions (top right) */}
+                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingId(proj.id);
+                        setEditValue(proj.name);
+                      }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center bg-white shadow-sm text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Renomear"
+                    >
+                      <MdEdit size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(proj.id);
+                      }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center bg-white shadow-sm text-gray-400 hover:text-red-500 transition-colors"
+                      title="Deletar"
+                    >
+                      <MdDelete size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className="px-3.5 py-3">
+                  {isEditing ? (
+                    <input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={() => {
+                        if (editValue.trim()) onRename(proj.id, editValue.trim());
+                        setEditingId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { if (editValue.trim()) onRename(proj.id, editValue.trim()); setEditingId(null); }
+                        if (e.key === 'Escape') setEditingId(null);
+                      }}
+                      className="w-full text-[13px] font-semibold px-1 py-0.5 rounded border border-blue-300 outline-none text-gray-800"
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <h3 className="text-[13px] font-semibold text-gray-800 truncate">{proj.name}</h3>
+                  )}
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {updated.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {' · '}
+                    {updated.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Studio() {
   const [projects, setProjects] = useState<StudioProject[]>([]);
   const [activeProject, setActiveProject] = useState<StudioProject | null>(null);
   const [loading, setLoading] = useState(true);
-  const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
-  const [showProjectList, setShowProjectList] = useState(false);
+  const [view, setView] = useState<'spaces' | 'canvas'>('spaces');
 
-  // Load projects on mount
-  useEffect(() => {
-    loadProjects();
-  }, []);
+  useEffect(() => { loadProjects(); }, []);
 
   const loadProjects = async () => {
     setLoading(true);
     const projs = await listProjects();
     setProjects(projs);
-    if (projs.length > 0 && !activeProject) {
-      setActiveProject(projs[0]); // Most recent
-    }
     setLoading(false);
   };
 
   const handleCreateProject = async () => {
-    const proj = await createProject(`Projeto ${projects.length + 1}`);
+    const proj = await createProject(`Space ${projects.length + 1}`);
     if (proj) {
       setProjects((prev) => [proj, ...prev]);
       setActiveProject(proj);
-      setShowProjectList(false);
+      setView('canvas');
     }
   };
 
   const handleDeleteProject = async (id: string) => {
-    if (!confirm('Deletar este projeto?')) return;
+    if (!confirm('Deletar este space?')) return;
     await deleteProject(id);
     setProjects((prev) => prev.filter((p) => p.id !== id));
-    if (activeProject?.id === id) {
-      const remaining = projects.filter((p) => p.id !== id);
-      setActiveProject(remaining.length > 0 ? remaining[0] : null);
-    }
+    if (activeProject?.id === id) setActiveProject(null);
   };
 
-  const handleRename = async (id: string) => {
-    if (!renameValue.trim()) return;
-    await renameProject(id, renameValue.trim());
-    setProjects((prev) => prev.map((p) => p.id === id ? { ...p, name: renameValue.trim() } : p));
-    if (activeProject?.id === id) {
-      setActiveProject((prev) => prev ? { ...prev, name: renameValue.trim() } : prev);
-    }
-    setRenamingId(null);
+  const handleRenameProject = async (id: string, name: string) => {
+    await renameProject(id, name);
+    setProjects((prev) => prev.map((p) => p.id === id ? { ...p, name } : p));
+    if (activeProject?.id === id) setActiveProject((prev) => prev ? { ...prev, name } : prev);
+  };
+
+  const handleOpenProject = (proj: StudioProject) => {
+    setActiveProject(proj);
+    setView('canvas');
+  };
+
+  const handleBackToSpaces = () => {
+    setView('spaces');
+    loadProjects(); // Refresh list
   };
 
   return (
     <div className="fixed inset-0 ml-[244px]" style={{ background: '#FAFAFA', fontFamily: "'Geist', sans-serif" }}>
-      {/* Studio header */}
+      {/* Header */}
       <div
         className="absolute top-0 left-0 right-0 h-14 z-20 flex items-center px-6"
         style={{
@@ -461,6 +734,17 @@ export function Studio() {
         }}
       >
         <div className="flex items-center gap-3">
+          {view === 'canvas' && (
+            <button
+              onClick={handleBackToSpaces}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+              title="Voltar para Spaces"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg, #00BFF5 0%, #0099D4 100%)' }}
@@ -468,153 +752,49 @@ export function Studio() {
             <MdAutoFixHigh size={16} style={{ color: 'white' }} />
           </div>
           <div>
-            <h1 className="text-[15px] font-semibold text-gray-800">Studio</h1>
-            <p className="text-[11px] -mt-0.5 text-gray-500">Crie conteúdo visual para suas modelos</p>
+            <h1 className="text-[15px] font-semibold text-gray-800">
+              {view === 'spaces' ? 'Studio' : activeProject?.name || 'Studio'}
+            </h1>
+            <p className="text-[11px] -mt-0.5 text-gray-500">
+              {view === 'spaces' ? 'Seus workflows visuais' : 'Crie conteúdo visual para suas modelos'}
+            </p>
           </div>
         </div>
 
-        {/* Project selector */}
-        <div className="ml-6 relative">
-          <button
-            onClick={() => setShowProjectList(!showProjectList)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-          >
-            <MdFolder size={16} className="text-gray-400" />
-            {activeProject?.name || 'Nenhum projeto'}
-            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {/* Project dropdown */}
-          {showProjectList && (
-            <div
-              className="absolute top-full left-0 mt-1 w-72 rounded-xl overflow-hidden z-50"
-              style={{
-                background: '#FFFFFF',
-                border: '1px solid rgba(0,0,0,0.08)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-              }}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Projetos</span>
-                <button
-                  onClick={handleCreateProject}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-blue-500 hover:bg-blue-50 transition-colors"
-                >
-                  <MdAdd size={14} />
-                  Novo
-                </button>
-              </div>
-
-              {/* Project list */}
-              <div className="max-h-64 overflow-y-auto">
-                {projects.length === 0 && (
-                  <div className="px-3 py-4 text-center text-[12px] text-gray-400">Nenhum projeto ainda</div>
-                )}
-                {projects.map((proj) => (
-                  <div
-                    key={proj.id}
-                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${
-                      activeProject?.id === proj.id ? 'bg-blue-50' : 'hover:bg-gray-50'
-                    }`}
-                    onClick={() => {
-                      setActiveProject(proj);
-                      setShowProjectList(false);
-                    }}
-                  >
-                    <MdFolder size={14} className={activeProject?.id === proj.id ? 'text-blue-500' : 'text-gray-300'} />
-                    {renamingId === proj.id ? (
-                      <input
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        onBlur={() => handleRename(proj.id)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleRename(proj.id); if (e.key === 'Escape') setRenamingId(null); }}
-                        className="flex-1 text-[12px] px-1 py-0.5 rounded border border-blue-300 outline-none"
-                        autoFocus
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    ) : (
-                      <span className="flex-1 text-[12px] font-medium text-gray-700 truncate">{proj.name}</span>
-                    )}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100" style={{ opacity: activeProject?.id === proj.id ? 1 : undefined }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRenamingId(proj.id);
-                          setRenameValue(proj.name);
-                        }}
-                        className="p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600"
-                        title="Renomear"
-                      >
-                        <MdEdit size={12} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteProject(proj.id);
-                        }}
-                        className="p-0.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
-                        title="Deletar"
-                      >
-                        <MdDelete size={12} />
-                      </button>
-                    </div>
-                    <span className="text-[10px] text-gray-300">
-                      {new Date(proj.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Keyboard shortcuts hint */}
-        <div className="ml-auto flex items-center gap-4">
-          <div className="flex items-center gap-2 text-[11px]" style={{ color: '#444' }}>
-            <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono" style={{ background: '#F0F0F0', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}>Right-click</kbd>
-            <span>novo card</span>
-            <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono" style={{ background: '#F0F0F0', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}>Scroll</kbd>
-            <span>zoom</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Canvas */}
-      <div className="absolute inset-0 top-14">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
-          </div>
-        ) : !activeProject ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <MdFolder size={48} className="mx-auto mb-4 text-gray-300" />
-              <h2 className="text-lg font-semibold text-gray-700 mb-2">Nenhum projeto</h2>
-              <p className="text-[13px] text-gray-400 mb-4">Crie um projeto para começar a trabalhar no Studio</p>
-              <button
-                onClick={handleCreateProject}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, #00AFF0, #0099D4)' }}
-              >
-                <MdAdd size={16} />
-                Criar Projeto
-              </button>
+        {/* Canvas-only controls */}
+        {view === 'canvas' && (
+          <div className="ml-auto flex items-center gap-4">
+            <div className="flex items-center gap-2 text-[11px]" style={{ color: '#444' }}>
+              <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono" style={{ background: '#F0F0F0', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}>Right-click</kbd>
+              <span>novo card</span>
+              <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono" style={{ background: '#F0F0F0', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}>Scroll</kbd>
+              <span>zoom</span>
             </div>
           </div>
-        ) : (
-          <ReactFlowProvider>
-            <StudioCanvas activeProject={activeProject} onProjectSaved={loadProjects} />
-          </ReactFlowProvider>
         )}
       </div>
 
-      {/* Click outside to close project list */}
-      {showProjectList && (
-        <div className="fixed inset-0 z-40" onClick={() => setShowProjectList(false)} />
-      )}
+      {/* Content */}
+      <div className="absolute inset-0 top-14">
+        {view === 'spaces' ? (
+          <SpacesView
+            projects={projects}
+            loading={loading}
+            onOpen={handleOpenProject}
+            onCreate={handleCreateProject}
+            onDelete={handleDeleteProject}
+            onRename={handleRenameProject}
+          />
+        ) : activeProject ? (
+          <ReactFlowProvider>
+            <StudioCanvas activeProject={activeProject} onProjectSaved={loadProjects} />
+          </ReactFlowProvider>
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -236,13 +236,16 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   // ── Drag from handle → empty space → open menu & auto-connect ──────
   const pendingConnectionRef = useRef<{ nodeId: string; handleId: string; handleType: 'source' | 'target' } | null>(null);
 
-  const onConnectStart = useCallback((_: unknown, params: { nodeId: string | null; handleId: string | null; handleType: 'source' | 'target' | null }) => {
-    if (params.nodeId && params.handleId && params.handleType) {
+  const onConnectStart = useCallback((_event: unknown, params: { nodeId: string | null; handleId: string | null; handleType: 'source' | 'target' | null }) => {
+    // Only track SOURCE (output) handles — inputs don't trigger drag-to-create
+    if (params.nodeId && params.handleId && params.handleType === 'source') {
       pendingConnectionRef.current = {
         nodeId: params.nodeId,
         handleId: params.handleId,
         handleType: params.handleType,
       };
+    } else {
+      pendingConnectionRef.current = null;
     }
   }, []);
 
@@ -251,13 +254,24 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     pendingConnectionRef.current = null;
     if (!pending) return;
 
+    // Get the actual DOM event (ReactFlow may wrap it)
+    const rawEvent = (event as unknown as { nativeEvent?: MouseEvent | TouchEvent }).nativeEvent || event;
+
     // Check if dropped on a valid target (another handle) — if so, onConnect already handled it
-    const target = event instanceof MouseEvent ? event.target : (event as TouchEvent).changedTouches?.[0]?.target;
-    if (target instanceof HTMLElement && target.closest('.react-flow__handle')) return;
+    const target = rawEvent instanceof MouseEvent
+      ? (rawEvent.target as HTMLElement)
+      : ((rawEvent as TouchEvent).changedTouches?.[0]?.target as HTMLElement);
+    if (target?.closest?.('.react-flow__handle')) return;
 
     // Dropped on empty space — open context menu at this position
-    const clientX = event instanceof MouseEvent ? event.clientX : (event as TouchEvent).changedTouches?.[0]?.clientX ?? 0;
-    const clientY = event instanceof MouseEvent ? event.clientY : (event as TouchEvent).changedTouches?.[0]?.clientY ?? 0;
+    const clientX = rawEvent instanceof MouseEvent
+      ? rawEvent.clientX
+      : (rawEvent as TouchEvent).changedTouches?.[0]?.clientX ?? 0;
+    const clientY = rawEvent instanceof MouseEvent
+      ? rawEvent.clientY
+      : (rawEvent as TouchEvent).changedTouches?.[0]?.clientY ?? 0;
+
+    if (!clientX && !clientY) return; // Safety check
 
     const flowPos = screenToFlowPosition({ x: clientX, y: clientY });
     setContextMenuFlowPos(flowPos);
@@ -318,30 +332,16 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
 
       let newEdge: Parameters<typeof addEdge>[0] | null = null;
 
-      if (pending.handleType === 'source') {
-        // Dragged from a source → connect to the first target on the new card
-        const targetHandle = newCardHandles.targets[0];
-        if (targetHandle) {
-          newEdge = {
-            source: pending.nodeId,
-            sourceHandle: pending.handleId,
-            target: newCard.id,
-            targetHandle,
-            ...defaultEdgeOptions,
-          };
-        }
-      } else {
-        // Dragged from a target → connect from the first source on the new card
-        const sourceHandle = newCardHandles.sources[0];
-        if (sourceHandle) {
-          newEdge = {
-            source: newCard.id,
-            sourceHandle,
-            target: pending.nodeId,
-            targetHandle: pending.handleId,
-            ...defaultEdgeOptions,
-          };
-        }
+      // Always from source → connect to the first target on the new card
+      const targetHandle = newCardHandles.targets[0];
+      if (targetHandle) {
+        newEdge = {
+          source: pending.nodeId,
+          sourceHandle: pending.handleId,
+          target: newCard.id,
+          targetHandle,
+          ...defaultEdgeOptions,
+        };
       }
 
       if (newEdge) {

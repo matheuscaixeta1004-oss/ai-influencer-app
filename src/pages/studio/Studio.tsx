@@ -179,6 +179,21 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   // Snap guides
   const { guides, onNodeDrag: snapOnNodeDrag, onNodeDragStop: snapOnNodeDragStop } = useSnapGuides(nodes);
 
+  // Shift+Scroll → horizontal pan (intercept before ReactFlow zooms)
+  useEffect(() => {
+    const container = document.querySelector('.studio-canvas') as HTMLElement | null;
+    if (!container) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.shiftKey) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const vp = getViewport();
+      setViewport({ x: vp.x - e.deltaY, y: vp.y, zoom: vp.zoom }, { duration: 0 });
+    };
+    container.addEventListener('wheel', onWheel, { passive: false, capture: true });
+    return () => container.removeEventListener('wheel', onWheel, { capture: true });
+  }, [getViewport, setViewport]);
+
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [contextMenuFlowPos, setContextMenuFlowPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -589,8 +604,11 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         onContextMenu={handleContextMenu}
         onPaneClick={handlePaneClick}
         selectionOnDrag
-        panOnDrag={[0]}
-        selectionKeyCode="Shift"
+        panOnDrag={[1]}
+        selectionKeyCode={null}
+        zoomOnScroll
+        zoomOnPinch
+        panOnScroll={false}
         style={{ background: '#FAFAFA' }}
       >
         <SnapGuides guides={guides} />
@@ -906,6 +924,8 @@ export function Studio() {
               <span>novo card</span>
               <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono" style={{ background: '#F0F0F0', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}>Scroll</kbd>
               <span>zoom</span>
+              <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono" style={{ background: '#F0F0F0', color: '#999', border: '1px solid rgba(0,0,0,0.08)' }}>Mid-click</kbd>
+              <span>mover</span>
             </div>
           </div>
         )}

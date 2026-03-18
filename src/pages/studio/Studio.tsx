@@ -70,6 +70,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   const [models, setModels] = useState<AIModel[]>([]);
   const [primaryPhoto, setPrimaryPhoto] = useState<ModelPhoto | null>(null);
   const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
+  const [modelPhotosMap, setModelPhotosMap] = useState<Record<string, string | null>>({});
   const [nsfwEnabled, setNsfwEnabled] = useState(false);
   const [resultCounter, setResultCounter] = useState(0);
   const [cardCounter, setCardCounter] = useState(0);
@@ -198,16 +199,25 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [contextMenuFlowPos, setContextMenuFlowPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Load user models
+  // Load user models + photos for all models
   useEffect(() => {
     if (!user) return;
-    getUserModels().then((m) => {
+    getUserModels().then(async (m) => {
       setModels(m);
       if (m.length > 0) setSelectedModel(m[0]);
+
+      // Load primary photo for each model
+      const photosMap: Record<string, string | null> = {};
+      await Promise.all(m.map(async (model) => {
+        const photos = await getModelPhotos(model.id);
+        const primary = photos.find((p) => p.is_primary) || photos[0] || null;
+        photosMap[model.id] = primary?.url || null;
+      }));
+      setModelPhotosMap(photosMap);
     });
   }, [user]);
 
-  // Load primary photo for selected model
+  // Load primary photo for globally selected model
   useEffect(() => {
     if (!selectedModel) return;
     getModelPhotos(selectedModel.id).then((photos) => {
@@ -216,19 +226,33 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     });
   }, [selectedModel]);
 
+  // Build model options list for Model Ref cards
+  const modelOptionsList = models.map((m) => ({
+    id: m.id,
+    name: m.name,
+    avatar: modelPhotosMap[m.id] || null,
+  }));
+
   // ── Helper: rebuild nodes from refs ──────────────────────────────────
   const rebuildNodes = useCallback(() => {
     const updatedSpawned = spawnedCardsRef.current.map((card) => {
       const tmplIdx = MENU_TO_TEMPLATE[String(card.data.category)] ?? 0;
       const tmpl = CARD_TEMPLATES[tmplIdx];
+
+      const isModelRef = tmpl.category === 'model_ref';
+
       return {
         ...card,
         data: {
           ...card.data,
-          modelAvatar: primaryPhoto?.url || undefined,
+          modelAvatar: isModelRef
+            ? (modelPhotosMap[(card.data.selectedModelId as string) || ''] || primaryPhoto?.url || undefined)
+            : (primaryPhoto?.url || undefined),
           modelName: selectedModel?.name || (models.length === 0 ? 'Crie um modelo primeiro' : 'Selecionar modelo'),
           onGenerate: (params: Record<string, string>) =>
             handleGenerate(tmpl.category as CardCategory, params, card.id),
+          onModelSelect: isModelRef ? (_modelId: string) => { triggerAutoSave(); } : undefined,
+          modelOptions: isModelRef ? modelOptionsList : undefined,
           hasSourceHandle: tmpl.hasSourceHandle,
           hasTargetHandle: tmpl.hasTargetHandle,
         },
@@ -236,7 +260,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     });
 
     setNodes([...updatedSpawned, ...resultsRef.current]);
-  }, [primaryPhoto, selectedModel, models, setNodes]);
+  }, [primaryPhoto, selectedModel, models, modelPhotosMap, setNodes]);
 
   // Handle mock generation — updates the card's preview, no new node
   const handleGenerate = useCallback((category: CardCategory, _params: Record<string, string>, sourceCardId?: string) => {
@@ -434,6 +458,7 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
     if (tmpl.comingSoon) return;
 
     const newCardId = `card-${tmpl.category}-${Date.now()}-${cardCounter}`;
+    const isModelRef = tmpl.category === 'model_ref';
     const newCard: Node = {
       id: newCardId,
       type: 'generationCard',
@@ -443,6 +468,9 @@ function StudioCanvas({ activeProject, onProjectSaved }: { activeProject: Studio
         modelAvatar: primaryPhoto?.url || undefined,
         modelName: selectedModel?.name || (models.length === 0 ? 'Crie um modelo primeiro' : 'Selecionar modelo'),
         onGenerate: (params: Record<string, string>) => handleGenerate(tmpl.category as CardCategory, params, newCardId),
+        onModelSelect: isModelRef ? (_modelId: string) => { triggerAutoSave(); } : undefined,
+        modelOptions: isModelRef ? modelOptionsList : undefined,
+        selectedModelId: isModelRef ? (selectedModel?.id || models[0]?.id || '') : undefined,
         cardIndex: cardCounter + 1,
       },
       draggable: true,

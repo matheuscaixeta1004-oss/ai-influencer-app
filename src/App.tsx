@@ -3,7 +3,7 @@ import { ToastProvider } from './components/ui';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/layout';
-import { Auth, Landing, Dashboard, Models, Gallery, Generate, Credits, Settings, Studio, CreateModelWizard, EditModel } from './pages';
+import { Auth, Landing, Dashboard, Models, Gallery, Generate, Credits, Settings, Studio, CreateModelWizard, EditModel, MissionControl } from './pages';
 
 export default function App() {
   return (
@@ -27,6 +27,7 @@ export default function App() {
               <Route path="/studio" element={<Studio />} />
               <Route path="/credits" element={<Credits />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/mission-control" element={<MissionControl />} />
             </Route>
           </Routes>
         </ToastProvider>

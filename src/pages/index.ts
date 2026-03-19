@@ -9,3 +9,4 @@ export { Settings } from './Settings';
 export { Studio } from './studio/Studio';
 export { CreateModelWizard } from './models/CreateModelWizard';
 export { EditModel } from './models/EditModel';
+export { MissionControl } from './mission-control';
